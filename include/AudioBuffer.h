@@ -4,14 +4,12 @@
 #include <cassert>
 #include <algorithm>
 
+namespace Middleman {
+
 class AudioBuffer {
 public:
   AudioBuffer(const AudioContext& context);
   ~AudioBuffer();
-
-  // Accessors
-  float* channelData(int ch);
-  const float* channelData(int ch) const;
 
   int getNumChannels() const;
   int getNumFrames() const;
@@ -25,9 +23,13 @@ public:
   float& operator[](int index);
   const float& operator[](int index) const;
 
+  // Made public so the vector can be accessed directly.
+  std::vector<float> data;
+
 private:
   int channels;
   int frames;
   float sampleRate;
-  std::vector<float> data;
 };
+
+} // namespace

@@ -4,6 +4,8 @@
 #include <queue>
 #include <iostream>
 
+namespace Middleman {
+
 AudioGraph::AudioGraph(const AudioContext& context)
   : audioContext(context), nextNodeId(0), isGraphDirty(true) {}
 
@@ -149,9 +151,11 @@ void AudioGraph::processGraph(AudioBuffer& outputBuffer) {
   outputBuffer.clear();
   for (auto const& [nodeId, node] : nodes) {
     if (connections.find(nodeId) == connections.end() || connections[nodeId].empty()) {
-      for (size_t i = 0; i < outputBuffer.size(); ++i) {
+      for (int i = 0; i < outputBuffer.size(); ++i) {
         outputBuffer[i] += node->outputBuffer[i];
       }
     }
   }
 }
+
+} // namespace

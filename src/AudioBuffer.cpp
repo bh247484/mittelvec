@@ -1,26 +1,16 @@
 #include "../include/AudioBuffer.h"
 #include "../include/AudioGraph.h"
 
+namespace Middleman {
 
 AudioBuffer::AudioBuffer(const AudioContext& context)
-  : channels(context.numChannels), frames(context.bufferSize), sampleRate(context.sampleRate)
+: channels(context.numChannels), frames(context.bufferSize), sampleRate(context.sampleRate)
 {
-  data.resize(static_cast<size_t>(channels) * frames, 0.0f);
+  data.resize(static_cast<int>(channels) * frames, 0.0f);
 }
 
 AudioBuffer::~AudioBuffer() = default;
-
-// Accessors
-float* AudioBuffer::channelData(int ch) {
-  assert(ch < channels);
-  return &data[static_cast<size_t>(ch) * frames];
-}
-
-const float* AudioBuffer::channelData(int ch) const {
-  assert(ch < channels);
-  return &data[static_cast<size_t>(ch) * frames];
-}
-
+    
 int AudioBuffer::getNumChannels() const { return channels; }
 int AudioBuffer::getNumFrames() const { return frames; }
 float AudioBuffer::getSampleRate() const { return sampleRate; }
@@ -32,12 +22,12 @@ void AudioBuffer::clear() { std::fill(data.begin(), data.end(), 0.0f); }
 // Operator overloads
 AudioBuffer& AudioBuffer::operator+=(const AudioBuffer& other) {
   assert(channels == other.channels && frames == other.frames);
-  for (size_t i = 0; i < data.size(); ++i) {
+  for (int i = 0; i < data.size(); ++i) {
     data[i] += other.data[i];
   }
   return *this;
 }
-
+    
 AudioBuffer AudioBuffer::operator+(const AudioBuffer& other) const {
   AudioBuffer result(*this);
   result += other;
@@ -51,3 +41,5 @@ float& AudioBuffer::operator[](int index) {
 const float& AudioBuffer::operator[](int index) const {
   return data[index];
 }
+
+} // namespace

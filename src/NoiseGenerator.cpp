@@ -1,6 +1,6 @@
 #include "../include/NoiseGenerator.h"
-// #include <random>
 
+namespace Middleman {
 
 NoiseGenerator::NoiseGenerator(const AudioContext& context)
   : AudioNode(context),
@@ -9,7 +9,9 @@ NoiseGenerator::NoiseGenerator(const AudioContext& context)
 {}
 
 void NoiseGenerator::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) {
-  for (size_t i = 0; i < outputBuffer.size(); ++i) {
+  for (int i = 0; i < outputBuffer.size(); ++i) {
     outputBuffer[i] = dist(randomGen);
   }
 }
+
+} // namespace

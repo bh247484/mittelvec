@@ -1,10 +1,13 @@
 
+#pragma once
 #include "AudioNode.h"
 #include "AudioBuffer.h"
 #include "AudioContext.h"
 #include <vector>
 #include <memory>
 #include <unordered_map>
+
+namespace Middleman {
 
 class AudioGraph {
 public:
@@ -28,3 +31,5 @@ public:
     std::vector<int> processOrder;
     bool isGraphDirty;
 };
+
+} // namespace

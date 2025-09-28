@@ -1,4 +1,7 @@
+#pragma once
 #include "AudioNode.h"
+
+namespace Middleman {
 
 class Gain : public AudioNode {
 public:
@@ -10,3 +13,5 @@ public:
 private:
     float gain;
 };
+
+} // namespace

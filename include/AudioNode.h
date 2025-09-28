@@ -1,7 +1,10 @@
+#pragma once
 #include "AudioBuffer.h"
 #include "AudioContext.h"
 #include <vector>
 #include <memory>
+
+namespace Middleman {
 
 class AudioNode {
 public:
@@ -12,3 +15,5 @@ public:
   
   AudioBuffer outputBuffer;
 };
+
+} // namespace
