@@ -9,16 +9,6 @@ namespace Middleman {
 AudioGraph::AudioGraph(const AudioContext& context)
   : audioContext(context), nextNodeId(0), isGraphDirty(true) {}
 
-template <typename NodeType, typename... Args>
-std::pair<int, NodeType*> AudioGraph::addNode(Args &&...args)
-{
-  int id = nextNodeId++;
-  auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
-  nodes[id] = std::move(node);
-  isGraphDirty = true;
-  return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
-}
-
 void AudioGraph::removeNode(int nodeId) {
   if (nodes.find(nodeId) == nodes.end()) return;
 

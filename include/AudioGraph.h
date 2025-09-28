@@ -13,10 +13,16 @@ class AudioGraph {
 public:
     AudioGraph(const AudioContext& context);
 
-    // int addNode(std::unique_ptr<AudioNode> node);
     template <typename NodeType, typename... Args>
-    std::pair<int, NodeType*> addNode(Args&&... args);
-    // std::vector<int> addNodes(std::vector<std::shared_ptr<AudioNode>> nodes);
+    std::pair<int, NodeType*> addNode(Args &&...args)
+    {
+    int id = nextNodeId++;
+    auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
+    nodes[id] = std::move(node);
+    isGraphDirty = true;
+    return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
+    }
+
     void removeNode(int nodeId);
     void connect(int sourceNodeId, int destNodeId);
     void disconnect(int sourceNodeId, int destNodeId);

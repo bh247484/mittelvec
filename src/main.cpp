@@ -6,6 +6,10 @@
 #pragma GCC diagnostic pop
 
 #include <stdio.h>
+#include <csignal>
+#include <thread>
+#include <chrono>
+#include <atomic>
 #include "../include/AudioBuffer.h"
 #include "../include/AudioGraph.h"
 #include "../include/Gain.h"
@@ -15,6 +19,8 @@
 const int BUFFER_SIZE = 512;
 const int NUM_CHANNELS = 2;
 const float SAMPLE_RATE = 44100.0f;
+
+std::atomic<bool> keepRunning(true);
 
 struct CallbackData {
   Middleman::AudioGraph* graph = nullptr;
@@ -40,6 +46,7 @@ void miniaudio_callback(ma_device* pDevice, void* pOutput, const void* pInput, m
 }
 
 int main() {
+  std::signal(SIGINT, [](int) { keepRunning = false; });
   
   // Setup miniaudio
   ma_result result;
@@ -50,12 +57,11 @@ int main() {
   config = ma_device_config_init(ma_device_type_playback);
   config.playback.format    = ma_format_f32;
   config.playback.channels  = NUM_CHANNELS;
-  config.sampleRate         = int(SAMPLE_RATE);
+  config.sampleRate         = static_cast<int>(SAMPLE_RATE);
   config.periodSizeInFrames = BUFFER_SIZE;
   config.dataCallback       = miniaudio_callback;
   config.pUserData          = &cbData;
 
-  ma_device device;
   if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
     assert(false);
   }
@@ -64,7 +70,7 @@ int main() {
   auto miniaudioBufferSize = device.playback.internalPeriodSizeInFrames;
 
   // Setup middleware graph
-  Middleman::AudioContext context = { miniaudioBufferSize, NUM_CHANNELS, SAMPLE_RATE };
+  Middleman::AudioContext context = { static_cast<int>(miniaudioBufferSize), NUM_CHANNELS, SAMPLE_RATE };
   Middleman::AudioGraph graph(context);
 
   auto [gainNodeId, gainNodePtr] = graph.addNode<Middleman::Gain>(0.5);
@@ -79,6 +85,16 @@ int main() {
   // Update pUserData pointers now that graph/graphOutput have been initalized.
   cbData.graph = &graph;
   cbData.graphOutput = &graphOutput;
+
+  if (ma_device_start(&device) != MA_SUCCESS) {
+    assert(false);
+  }
+
+  while (keepRunning) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  ma_device_uninit(&device);
 
   return 0;
 }

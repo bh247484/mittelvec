@@ -2,7 +2,7 @@
 
 namespace Middleman {
 
-Gain::Gain(float gain, const AudioContext& context)
+Gain::Gain(const AudioContext& context, float gain)
   : AudioNode(context), gain(gain) {}
 
 void Gain::setGain(float newGain) {
