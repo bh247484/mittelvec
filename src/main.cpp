@@ -73,7 +73,7 @@ int main() {
   Middleman::AudioContext context = { static_cast<int>(miniaudioBufferSize), NUM_CHANNELS, SAMPLE_RATE };
   Middleman::AudioGraph graph(context);
 
-  auto [gainNodeId, gainNodePtr] = graph.addNode<Middleman::Gain>(0.5);
+  auto [gainNodeId, gainNodePtr] = graph.addNode<Middleman::Gain>(0.25);
   auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<Middleman::NoiseGenerator>();
   auto [outputNodeId, outputNodePtr] = graph.addNode<Middleman::Gain>(1.0);
 

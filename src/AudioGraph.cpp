@@ -74,25 +74,25 @@ void AudioGraph::updateProcessOrder() {
   }
 
   // Initialize queue with nodes having an in-degree of 0 (our source nodes)
-  std::queue<int> q;
+  std::queue<int> queue;
   for (const auto& pair : inDegree) {
     if (pair.second == 0) {
-      q.push(pair.first);
+      queue.push(pair.first);
     }
   }
 
   // Process nodes using Kahn's algorithm
-  while (!q.empty()) {
-    int u = q.front();
-    q.pop();
-    processOrder.push_back(u);
+  while (!queue.empty()) {
+    int nodeId = queue.front();
+    queue.pop();
+    processOrder.push_back(nodeId);
 
-    // For each neighbor of u, decrease its in-degree
-    if (connections.count(u)) {
-      for (int v : connections[u]) {
-        inDegree[v]--;
-        if (inDegree[v] == 0) {
-          q.push(v);
+    // Decrement inDegrees of neighboring nodes
+    if (connections.count(nodeId)) {
+      for (int neighbor : connections[nodeId]) {
+        inDegree[neighbor]--;
+        if (inDegree[neighbor] == 0) {
+          queue.push(neighbor);
         }
       }
     }
