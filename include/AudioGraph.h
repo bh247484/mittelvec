@@ -7,7 +7,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace Middleman {
+namespace MittelVec {
 
 class AudioGraph {
 public:

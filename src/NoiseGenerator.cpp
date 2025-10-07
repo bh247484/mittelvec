@@ -1,6 +1,6 @@
 #include "../include/NoiseGenerator.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 NoiseGenerator::NoiseGenerator(const AudioContext& context)
   : AudioNode(context),

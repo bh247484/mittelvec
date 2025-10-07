@@ -4,7 +4,7 @@
 #include <cassert>
 #include <algorithm>
 
-namespace Middleman {
+namespace MittelVec {
 
 class AudioBuffer {
 public:

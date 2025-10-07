@@ -1,6 +1,6 @@
 #include "../include/Envelope.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 Envelope::Envelope(const AudioContext& context, float attack, float decay, float sustain, float release)
   : AudioNode(context), attack(attack), decay(decay), sustain(sustain), release(release), sampleRate(context.sampleRate) {}
@@ -81,4 +81,4 @@ void Envelope::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffe
   }
 }
 
-} // namespace Middleman
+} // namespace MittelVec

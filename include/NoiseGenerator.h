@@ -2,7 +2,7 @@
 #include "AudioNode.h"
 #include <random>
 
-namespace Middleman {
+namespace MittelVec {
     
 class NoiseGenerator : public AudioNode {
     public:

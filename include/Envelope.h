@@ -1,7 +1,7 @@
 #pragma once
 #include "AudioNode.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 class Envelope : public AudioNode {
 public:

@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-namespace Middleman {
+namespace MittelVec {
 
 class AudioNode {
 public:

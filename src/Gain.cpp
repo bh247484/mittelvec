@@ -1,6 +1,6 @@
 #include "../include/Gain.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 Gain::Gain(const AudioContext& context, float gain)
   : AudioNode(context), gain(gain) {}

@@ -1,7 +1,7 @@
 #include "../include/AudioBuffer.h"
 #include "../include/AudioGraph.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 AudioBuffer::AudioBuffer(const AudioContext& context)
 : channels(context.numChannels), frames(context.bufferSize), sampleRate(context.sampleRate)

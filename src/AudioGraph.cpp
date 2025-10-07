@@ -4,7 +4,7 @@
 #include <queue>
 #include <iostream>
 
-namespace Middleman {
+namespace MittelVec {
 
 AudioGraph::AudioGraph(const AudioContext& context)
   : audioContext(context), nextNodeId(0), isGraphDirty(true) {}

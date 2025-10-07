@@ -1,6 +1,6 @@
 #include "../include/PolyphonicSampler.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 PolyphonicSampler::PolyphonicSampler(const AudioContext &context, AudioBuffer sample, int polyphony)
   : AudioNode(context), sample(sample), polyphony(polyphony)

@@ -23,8 +23,8 @@ const float SAMPLE_RATE = 44100.0f;
 std::atomic<bool> keepRunning(true);
 
 struct CallbackData {
-  Middleman::AudioGraph* graph = nullptr;
-  Middleman::AudioBuffer* graphOutput = nullptr;
+  MittelVec::AudioGraph* graph = nullptr;
+  MittelVec::AudioBuffer* graphOutput = nullptr;
 };
 
 // Callback for audio playback.
@@ -70,17 +70,17 @@ int main() {
   auto miniaudioBufferSize = device.playback.internalPeriodSizeInFrames;
 
   // Setup middleware graph
-  Middleman::AudioContext context = { static_cast<int>(miniaudioBufferSize), NUM_CHANNELS, SAMPLE_RATE };
-  Middleman::AudioGraph graph(context);
+  MittelVec::AudioContext context = { static_cast<int>(miniaudioBufferSize), NUM_CHANNELS, SAMPLE_RATE };
+  MittelVec::AudioGraph graph(context);
 
-  auto [gainNodeId, gainNodePtr] = graph.addNode<Middleman::Gain>(0.25);
-  auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<Middleman::NoiseGenerator>();
-  auto [outputNodeId, outputNodePtr] = graph.addNode<Middleman::Gain>(1.0);
+  auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.25);
+  auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
+  auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(1.0);
 
   graph.connect(noiseGenNodeId, gainNodeId);
   graph.connect(gainNodeId, outputNodeId);
 
-  Middleman::AudioBuffer graphOutput(context);
+  MittelVec::AudioBuffer graphOutput(context);
 
   // Update pUserData pointers now that graph/graphOutput have been initalized.
   cbData.graph = &graph;

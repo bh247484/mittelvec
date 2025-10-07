@@ -3,7 +3,7 @@
 #include "AudioNode.h"
 #include "Envelope.h"
 
-namespace Middleman {
+namespace MittelVec {
 
 // Consider making SamplerVoice its own class..
 struct SamplerVoice {

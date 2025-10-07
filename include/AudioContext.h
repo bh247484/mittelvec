@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Middleman {
+namespace MittelVec {
 
 struct AudioContext {
   int bufferSize;
