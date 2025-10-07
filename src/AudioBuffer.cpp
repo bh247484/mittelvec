@@ -16,6 +16,13 @@ int AudioBuffer::getNumFrames() const { return frames; }
 float AudioBuffer::getSampleRate() const { return sampleRate; }
 int AudioBuffer::size() const { return data.size(); }
 
+void AudioBuffer::setAudioContext(AudioContext newContext) {
+  channels = newContext.numChannels;
+  frames = newContext.bufferSize;
+  sampleRate = newContext.sampleRate;
+  data.resize(static_cast<int>(channels) * frames, 0.0f);
+}
+
 // Clear buffer
 void AudioBuffer::clear() { std::fill(data.begin(), data.end(), 0.0f); }
 

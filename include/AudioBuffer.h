@@ -15,6 +15,7 @@ public:
   int getNumFrames() const;
   float getSampleRate() const;
   int size() const;
+  void setAudioContext(AudioContext newContext);
 
   void clear();
   AudioBuffer& operator+=(const AudioBuffer& other);

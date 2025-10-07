@@ -1,20 +1,15 @@
-#define MINIAUDIO_IMPLEMENTATION
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wextra"
-#include "miniaudio.h"
-#pragma GCC diagnostic pop
-
 #include <stdio.h>
 #include <csignal>
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include "../include/Engine.h"
 #include "../include/AudioBuffer.h"
 #include "../include/AudioGraph.h"
 #include "../include/Gain.h"
 #include "../include/NoiseGenerator.h"
 #include "../include/AudioContext.h"
+#include "../include/PolyphonicSampler.h"
 
 const int BUFFER_SIZE = 512;
 const int NUM_CHANNELS = 2;
@@ -22,79 +17,30 @@ const float SAMPLE_RATE = 44100.0f;
 
 std::atomic<bool> keepRunning(true);
 
-struct CallbackData {
-  MittelVec::AudioGraph* graph = nullptr;
-  MittelVec::AudioBuffer* graphOutput = nullptr;
-};
-
-// Callback for audio playback.
-void miniaudio_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-  float* out = (float*)pOutput;
-  CallbackData* cbData = (CallbackData*)pDevice->pUserData;
-
-  // Write graph data into graph output buffer.
-  cbData->graph->processGraph(*cbData->graphOutput);
-  
-  // Copy graph output buffer into miniaudio output buffer.
-  memcpy(out, (*cbData->graphOutput).data.data(), frameCount * NUM_CHANNELS * sizeof(float));
-  // std::copy((*cbData->graphOutput).data.begin(), (*cbData->graphOutput).data.end(), out);
-  // for (ma_uint32 i = 0; i < frameCount * pDevice->playback.channels; i++) {
-  //   out[i] = (*(cbData->graphOutput))[i];
-  // }
-
-  (void)pInput; // unused
-}
-
 int main() {
   std::signal(SIGINT, [](int) { keepRunning = false; });
-  
-  // Setup miniaudio
-  ma_result result;
-  ma_device_config config;
-  ma_device device;
-  CallbackData cbData;
 
-  config = ma_device_config_init(ma_device_type_playback);
-  config.playback.format    = ma_format_f32;
-  config.playback.channels  = NUM_CHANNELS;
-  config.sampleRate         = static_cast<int>(SAMPLE_RATE);
-  config.periodSizeInFrames = BUFFER_SIZE;
-  config.dataCallback       = miniaudio_callback;
-  config.pUserData          = &cbData;
+  MittelVec::AudioContext globalContext = { BUFFER_SIZE, NUM_CHANNELS, SAMPLE_RATE };
+  MittelVec::Engine engine(globalContext);
+  engine.start();
 
-  if (ma_device_init(NULL, &config, &device) != MA_SUCCESS) {
-    assert(false);
-  }
-
-  // Miniaudio buffer size not guaranteed here so we need to query it after initialization.
-  auto miniaudioBufferSize = device.playback.internalPeriodSizeInFrames;
-
-  // Setup middleware graph
-  MittelVec::AudioContext context = { static_cast<int>(miniaudioBufferSize), NUM_CHANNELS, SAMPLE_RATE };
-  MittelVec::AudioGraph graph(context);
+  MittelVec::AudioGraph& graph = engine.graph;
 
   auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.25);
   auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
   auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(1.0);
 
+  // MittelVec::AudioBuffer sample(globalContext);
+  // // Load wav with miniaudio and write into AudioBuffer sample.
+  // // ...
+  // auto [polySamplerId, polySamplerPtr] = graph.addNode<MittelVec::PolyphonicSampler>(,6);
+
   graph.connect(noiseGenNodeId, gainNodeId);
   graph.connect(gainNodeId, outputNodeId);
-
-  MittelVec::AudioBuffer graphOutput(context);
-
-  // Update pUserData pointers now that graph/graphOutput have been initalized.
-  cbData.graph = &graph;
-  cbData.graphOutput = &graphOutput;
-
-  if (ma_device_start(&device) != MA_SUCCESS) {
-    assert(false);
-  }
 
   while (keepRunning) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-
-  ma_device_uninit(&device);
 
   return 0;
 }

@@ -27,6 +27,7 @@ public:
     void connect(int sourceNodeId, int destNodeId);
     void disconnect(int sourceNodeId, int destNodeId);
     void processGraph(AudioBuffer& outputBuffer);
+    void setAudioContext(AudioContext newContext);
 
     void updateProcessOrder();
     AudioContext audioContext;

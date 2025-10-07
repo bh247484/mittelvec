@@ -148,4 +148,8 @@ void AudioGraph::processGraph(AudioBuffer& outputBuffer) {
   }
 }
 
+void AudioGraph::setAudioContext(AudioContext newContext)
+{
+  audioContext = newContext;
+}
 } // namespace
