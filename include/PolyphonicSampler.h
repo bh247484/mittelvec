@@ -50,8 +50,7 @@ struct SamplerVoice {
     }
 
     // Apply per-voice DSP
-    std::vector<const AudioBuffer*> inputs = { &voiceBuffer }; // weird but necessary since AudioNodes expect vector of inputs.
-    envelope->process(inputs, voiceBuffer);
+    envelope->applyToBuffer(voiceBuffer);
 
     // Sum into main output buffer
     outputBuffer += voiceBuffer;

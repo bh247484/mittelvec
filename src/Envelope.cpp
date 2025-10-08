@@ -77,7 +77,17 @@ void Envelope::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffe
 
   // Apply envelope to the summed signal
   for (int i = 0; i < outputBuffer.size(); ++i) {
-    outputBuffer[i] *= this->getNextLevel();
+    outputBuffer[i] *= getNextLevel();
+  }
+}
+
+/**
+ * Applies envelope directly to incoming buffer.
+ * Allows for inline processing as opposed to more modular node/graph style `process` method approach.
+ */
+void Envelope::applyToBuffer(AudioBuffer& buffer) {
+  for (int i = 0; i < buffer.size(); ++i) {
+    buffer[i] *= getNextLevel();
   }
 }
 

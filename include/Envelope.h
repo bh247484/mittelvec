@@ -25,6 +25,8 @@ public:
 
   void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
 
+  void applyToBuffer(AudioBuffer& buffer);
+
 private:
   State state;
   float attack, decay, sustain, release;
