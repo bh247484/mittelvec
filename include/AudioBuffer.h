@@ -16,7 +16,8 @@ public:
   float getSampleRate() const;
   int size() const;
   void setAudioContext(AudioContext newContext);
-
+  
+  void resize(int newBufferSize);
   void clear();
   AudioBuffer& operator+=(const AudioBuffer& other);
   AudioBuffer operator+(const AudioBuffer& other) const;

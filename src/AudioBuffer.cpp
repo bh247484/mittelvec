@@ -26,6 +26,11 @@ void AudioBuffer::setAudioContext(AudioContext newContext) {
 // Clear buffer
 void AudioBuffer::clear() { std::fill(data.begin(), data.end(), 0.0f); }
 
+void AudioBuffer::resize(int newBufferSize) {
+  frames = static_cast<int>(newBufferSize);
+  data.resize(frames * channels, 0.0f); // fill buffer with zeroes while resizing.
+}
+
 // Operator overloads
 AudioBuffer& AudioBuffer::operator+=(const AudioBuffer& other) {
   assert(channels == other.channels && frames == other.frames);
