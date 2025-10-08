@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug MittelVec",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/mittelvec",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "internalConsoleOptions": "openOnSessionStart",
+      "MIMode": "lldb"   // macOS: lldb, Linux: gdb, Windows: gdb (MinGW) or cppvsdbg
+    },
+    {
+      "name": "Attach MittelVec",
+      "type": "cppdbg",
+      "request": "attach",
+      "program": "${workspaceFolder}/build/Debug/mittelvec",
+      "MIMode": "lldb"   // macOS: lldb, Linux: gdb, Windows: gdb (MinGW) or cppvsdbg
+    }
+  ]
+}
