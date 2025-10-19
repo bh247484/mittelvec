@@ -108,7 +108,7 @@ void AudioGraph::updateProcessOrder() {
 }
 
 
-void AudioGraph::processGraph(AudioBuffer& outputBuffer) {
+void AudioGraph::processGraph(AudioBuffer& graphOutputBuffer) {
   // If the graph structure has changed, recalculate the processing order.
   if (isGraphDirty) {
     updateProcessOrder();
@@ -116,7 +116,7 @@ void AudioGraph::processGraph(AudioBuffer& outputBuffer) {
 
   // If the process order is empty (and there are nodes), it means a cycle was detected.
   if (processOrder.empty() && !nodes.empty()) {
-    outputBuffer.clear();
+    graphOutputBuffer.clear();
     return; // Output silence if graph is invalid
   }
 
@@ -138,11 +138,11 @@ void AudioGraph::processGraph(AudioBuffer& outputBuffer) {
   }
 
   // Sum the outputs of all "terminal" nodes (nodes with no outgoing connections)
-  outputBuffer.clear();
+  graphOutputBuffer.clear();
   for (auto const& [nodeId, node] : nodes) {
     if (connections.find(nodeId) == connections.end() || connections[nodeId].empty()) {
-      for (int i = 0; i < outputBuffer.size(); ++i) {
-        outputBuffer[i] += node->outputBuffer[i];
+      for (int i = 0; i < graphOutputBuffer.size(); ++i) {
+        graphOutputBuffer[i] += node->outputBuffer[i];
       }
     }
   }

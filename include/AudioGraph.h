@@ -16,17 +16,17 @@ public:
     template <typename NodeType, typename... Args>
     std::pair<int, NodeType*> addNode(Args &&...args)
     {
-    int id = nextNodeId++;
-    auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
-    nodes[id] = std::move(node);
-    isGraphDirty = true;
-    return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
+      int id = nextNodeId++;
+      auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
+      nodes[id] = std::move(node);
+      isGraphDirty = true;
+      return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
     }
 
     void removeNode(int nodeId);
     void connect(int sourceNodeId, int destNodeId);
     void disconnect(int sourceNodeId, int destNodeId);
-    void processGraph(AudioBuffer& outputBuffer);
+    void processGraph(AudioBuffer& graphOutputBuffer);
     void setAudioContext(AudioContext newContext);
 
     void updateProcessOrder();

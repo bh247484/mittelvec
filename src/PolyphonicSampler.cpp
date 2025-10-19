@@ -1,13 +1,51 @@
+#include <string>
 #include "../include/PolyphonicSampler.h"
+#include "../include/miniaudio.h"
 
 namespace MittelVec {
 
-PolyphonicSampler::PolyphonicSampler(const AudioContext &context, AudioBuffer sample, int polyphony)
-  : AudioNode(context), sample(sample), polyphony(polyphony)
+PolyphonicSampler::PolyphonicSampler(const AudioContext &context, std::string samplePath, int polyphony)
+  : AudioNode(context), sample(context), polyphony(polyphony)
 {
+  // Load sample
+  ma_decoder decoder;
+  ma_decoder_config decoderConfig = ma_decoder_config_init(
+    ma_format_f32,
+    context.numChannels,
+    context.sampleRate
+  );
+
+  if (ma_decoder_init_file(samplePath.c_str(), &decoderConfig, &decoder) != MA_SUCCESS) {
+    printf("Failed to load WAV file at path %s\n", samplePath.c_str());
+  } else {
+    ma_uint64 totalFrames;
+    ma_result result = ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames);
+
+    if (result != MA_SUCCESS) {
+      printf("Failed to get length of WAV file.\n");
+      ma_decoder_uninit(&decoder);
+    }
+
+    sample.resize(static_cast<size_t>(totalFrames));
+
+    ma_uint64 framesRead;
+    result = ma_decoder_read_pcm_frames(&decoder, sample.data.data(), totalFrames, &framesRead);
+    if (result != MA_SUCCESS) {
+      printf("Failed to read WAV file.\n");
+    }
+
+    // Optionally set frame count
+    // sample.frames = static_cast<int>(framesRead);
+  }
+  
+  // Cleanup miniaudio decoder.
+  ma_decoder_uninit(&decoder);
+
+
+  // Setup voices.
   voices.reserve(polyphony);
   for (int i = 0; i < polyphony; ++i) {
-    voices.emplace_back(context);  // constructs SamplerVoice with AudioContext
+    voices.emplace_back(context);
   }
 }
 

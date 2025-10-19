@@ -59,7 +59,7 @@ struct SamplerVoice {
     
 class PolyphonicSampler : public AudioNode {
   public:
-  PolyphonicSampler(const AudioContext& context, AudioBuffer sample, int polyphony);
+  PolyphonicSampler(const AudioContext& context, std::string samplePath, int polyphony);
 
   void noteOn();
   void noteOff();
@@ -71,7 +71,6 @@ class PolyphonicSampler : public AudioNode {
   int polyphony;
   AudioBuffer sample;
   std::vector<SamplerVoice> voices;
-  // std::list<int> activeVoices; // indicies per voice of `voices` vector above.
   std::list<SamplerVoice*> activeVoices; // indicies per voice of `voices` vector above.
 };
     

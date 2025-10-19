@@ -27,50 +27,18 @@ int main() {
 
   MittelVec::AudioGraph& graph = engine.graph;
 
-  // auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.25);
-  // auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
-  auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(1.0);
-
-  const char* wavPath = "/Users/bh/Documents/game-audio/middleware-exp/sounds/blip.wav";
-
-  ma_decoder decoder;
-  ma_decoder_config decoderConfig = ma_decoder_config_init(
-    ma_format_f32,
-    globalContext.numChannels,
-    globalContext.sampleRate
-  );
-  MittelVec::AudioBuffer sample(globalContext);
-
-  if (ma_decoder_init_file(wavPath, &decoderConfig, &decoder) != MA_SUCCESS) {
-    printf("Failed to load WAV file.\n");
-  } else {
-    ma_uint64 totalFrames;
-    ma_result result = ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames);
-
-    if (result != MA_SUCCESS) {
-      printf("Failed to get length of WAV file.\n");
-      ma_decoder_uninit(&decoder);
-    }
-
-    sample.resize(static_cast<size_t>(totalFrames));
-
-    ma_uint64 framesRead;
-    result = ma_decoder_read_pcm_frames(&decoder, sample.data.data(), totalFrames, &framesRead);
-    if (result != MA_SUCCESS) {
-      printf("Failed to read WAV file.\n");
-    }
-
-    // Optionally set frame count
-    // sample.frames = static_cast<int>(framesRead);
-
-    ma_decoder_uninit(&decoder);
-  }
+  auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.05);
+  auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
+  auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(3.0);
 
   // Load wav with miniaudio and write into AudioBuffer sample.
-  auto [polySamplerId, polySamplerPtr] = graph.addNode<MittelVec::PolyphonicSampler>(sample, 6);
+  auto [polySamplerId, polySamplerPtr] = graph.addNode<MittelVec::PolyphonicSampler>(
+    "/Users/bh/Documents/game-audio/middleware-exp/sounds/blip.wav",
+    6
+  );
 
-  // graph.connect(noiseGenNodeId, gainNodeId);
-  // graph.connect(gainNodeId, outputNodeId);
+  graph.connect(noiseGenNodeId, gainNodeId);
+  graph.connect(gainNodeId, outputNodeId);
   graph.connect(polySamplerId, outputNodeId);
 
   while (keepRunning) {
@@ -78,10 +46,10 @@ int main() {
     if (std::cin >> input) {
       if (input == "t") {
         polySamplerPtr->noteOn();
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        polySamplerPtr->noteOn();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        polySamplerPtr->noteOn();
+        // std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        // polySamplerPtr->noteOn();
+        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // polySamplerPtr->noteOn();
       }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
