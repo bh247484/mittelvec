@@ -39,29 +39,35 @@ int main() {
   // Declare SamplePackItems.
   std::vector<MittelVec::SamplePackItem> samplePackItems = {
     {
-      "blip",
-      "/Users/bh/Documents/game-audio/middleware-exp/sounds/blip.wav",
-      6,
-      false,
+      "blip", // slug
+      "blip.wav",
+      6, // polyphony
+      false, // loop
       5.0, // gain
-      // {
-      //   1.0,
-      //   1.0,
-      //   1.0,
-      //   1.0,
-      // }
+    },
+    {
+      "perc",
+      "perc.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
     },
   };
 
   // Pass SamplePackItems to and instantiate SamplePack.
-  MittelVec::SamplePack samplePack(graph, samplePackItems);
+  std::string samplesDir = "/Users/bh/Documents/game-audio/middleware-exp/sounds/";
+  MittelVec::SamplePack samplePack(graph, samplePackItems, samplesDir);
   samplePack.triggerSample("blip");
 
   while (keepRunning) {
     std::string input;
     if (std::cin >> input) {
-      if (input == "t") {
+      if (input == "b") {
         samplePack.triggerSample("blip");
+      }
+
+      if (input == "t") {
+        samplePack.triggerSample("perc");
       }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

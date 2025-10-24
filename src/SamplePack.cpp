@@ -2,12 +2,12 @@
 
 namespace MittelVec {
 
-SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, float gain)
+SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, std::string samplesDir, float gain)
   : graph(graph) {
     auto [outputNodeId, outputNodePtr] = graph.addNode<Gain>(gain); // consider parameterizing gain
 
     for (auto& item : samplePackItems) {
-      auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(item.samplePath, item.polyphony, item.loop, item.gain);
+      auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(samplesDir + item.fileName, item.polyphony, item.loop, item.gain);
       samplers[item.slug] = samplerNodePtr;
       graph.connect(samplerNodeId, outputNodeId);
     }

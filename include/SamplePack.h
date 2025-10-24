@@ -7,7 +7,7 @@ namespace MittelVec {
 
 struct SamplePackItem {
   std::string slug;
-  std::string samplePath;
+  std::string fileName;
   int polyphony;
   bool loop;
   float gain;
@@ -17,16 +17,16 @@ struct SamplePackItem {
   // Constructor enforces required fields and default value for polyphony.
   SamplePackItem(
     std::string slug,
-    std::string samplePath,
+    std::string fileName,
     int polyphony = 1,
     bool loop = false,
     float gain = 1.0
-  ) : slug(slug), samplePath(samplePath), polyphony(polyphony), loop(loop), gain(gain) {}
+  ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop), gain(gain) {}
 };
 
 class SamplePack {
 public:
-  SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, float gain = 1.0);
+  SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, std::string samplesDir, float gain = 1.0);
   void triggerSample(std::string slug);
 
   std::unordered_map<std::string, Sampler*> samplers;
