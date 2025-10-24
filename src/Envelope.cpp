@@ -2,8 +2,10 @@
 
 namespace MittelVec {
 
-Envelope::Envelope(const AudioContext& context, float attack, float decay, float sustain, float release)
-  : AudioNode(context), attack(attack), decay(decay), sustain(sustain), release(release), sampleRate(context.sampleRate) {}
+// EnvConfig defaultEnvConfig = { 0.01f, 0.1f, 0.8f, 0.2f };
+
+Envelope::Envelope(const AudioContext& context, const EnvConfig& config)
+  : AudioNode(context), attack(config.attack), decay(config.decay), sustain(config.sustain), release(config.release), sampleRate(context.sampleRate) {}
 
 float Envelope::getNextLevel() {
   switch (state) {

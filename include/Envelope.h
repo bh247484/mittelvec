@@ -3,9 +3,16 @@
 
 namespace MittelVec {
 
+struct EnvConfig {
+  float attack;
+  float decay;
+  float sustain;
+  float release;
+};
+
 class Envelope : public AudioNode {
 public:
-  explicit Envelope(const AudioContext& context, float attack, float decay, float sustain, float release);
+  explicit Envelope(const AudioContext& context, const EnvConfig& config = { 0.01f, 0.1f, 0.8f, 0.2f }); // Revisit these defaults values.
 
   enum State { Idle, Attack, Decay, Sustain, Release };
 

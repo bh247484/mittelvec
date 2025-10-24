@@ -51,6 +51,10 @@
     "typeinfo": "cpp",
     "unordered_set": "cpp",
     "variant": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "charconv": "cpp",
+    "csignal": "cpp",
+    "forward_list": "cpp",
+    "list": "cpp"
   }
 }

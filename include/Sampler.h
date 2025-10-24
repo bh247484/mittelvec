@@ -9,7 +9,6 @@ namespace MittelVec {
 struct SamplerVoice {
   int playheadIndex = 0;
   bool active = false;
-  bool loop = false;
 
   std::unique_ptr<Envelope> envelope;
   // std::unique_ptr<FilterNode> filter;
@@ -18,7 +17,7 @@ struct SamplerVoice {
 
   SamplerVoice(const AudioContext& context)
     : voiceBuffer(context),
-    envelope(std::make_unique<Envelope>(context, 0.01f, 0.1f, 0.8f, 0.2f)) // revisit these envelope defaults...
+    envelope(std::make_unique<Envelope>(context))
   {}
 
   void trigger() {
@@ -27,7 +26,7 @@ struct SamplerVoice {
     envelope->noteOn();
   }
 
-  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer) {
+  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer, bool loop, float gain) {
     if (!active) return;
     
     voiceBuffer.clear();
@@ -46,7 +45,7 @@ struct SamplerVoice {
       }
 
       // Write sample data into voiceBuffer.
-      voiceBuffer[i] = sample[playheadIndex++];
+      voiceBuffer[i] = sample[playheadIndex++] * gain;
     }
 
     // Apply per-voice DSP
@@ -57,9 +56,9 @@ struct SamplerVoice {
   }
 };
     
-class PolyphonicSampler : public AudioNode {
+class Sampler : public AudioNode {
   public:
-  PolyphonicSampler(const AudioContext& context, std::string samplePath, int polyphony);
+  Sampler(const AudioContext& context, std::string samplePath, int polyphony, bool loop = false, float gain = 1.0f);
 
   void noteOn();
   void noteOff();
@@ -72,6 +71,8 @@ class PolyphonicSampler : public AudioNode {
   AudioBuffer sample;
   std::vector<SamplerVoice> voices;
   std::list<SamplerVoice*> activeVoices; // indicies per voice of `voices` vector above.
+  bool loop;
+  float gain;
 };
     
 } // namespace

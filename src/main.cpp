@@ -1,3 +1,4 @@
+#pragma once
 #include <stdio.h>
 #include <csignal>
 #include <thread>
@@ -10,7 +11,8 @@
 #include "../include/Gain.h"
 #include "../include/NoiseGenerator.h"
 #include "../include/AudioContext.h"
-#include "../include/PolyphonicSampler.h"
+#include "../include/Sampler.h"
+#include "../include/SamplePack.h"
 
 const int BUFFER_SIZE = 512;
 const int NUM_CHANNELS = 2;
@@ -27,29 +29,39 @@ int main() {
 
   MittelVec::AudioGraph& graph = engine.graph;
 
-  auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.05);
-  auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
-  auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(3.0);
+  // auto [gainNodeId, gainNodePtr] = graph.addNode<MittelVec::Gain>(0.05);
+  // auto [noiseGenNodeId, noiseGenNodePtr] = graph.addNode<MittelVec::NoiseGenerator>();
+  // auto [outputNodeId, outputNodePtr] = graph.addNode<MittelVec::Gain>(3.0);
 
-  // Load wav with miniaudio and write into AudioBuffer sample.
-  auto [polySamplerId, polySamplerPtr] = graph.addNode<MittelVec::PolyphonicSampler>(
-    "/Users/bh/Documents/game-audio/middleware-exp/sounds/blip.wav",
-    6
-  );
+  // graph.connect(noiseGenNodeId, gainNodeId);
+  // graph.connect(gainNodeId, outputNodeId);
 
-  graph.connect(noiseGenNodeId, gainNodeId);
-  graph.connect(gainNodeId, outputNodeId);
-  graph.connect(polySamplerId, outputNodeId);
+  // Declare SamplePackItems.
+  std::vector<MittelVec::SamplePackItem> samplePackItems = {
+    {
+      "blip",
+      "/Users/bh/Documents/game-audio/middleware-exp/sounds/blip.wav",
+      6,
+      false,
+      5.0, // gain
+      // {
+      //   1.0,
+      //   1.0,
+      //   1.0,
+      //   1.0,
+      // }
+    },
+  };
+
+  // Pass SamplePackItems to and instantiate SamplePack.
+  MittelVec::SamplePack samplePack(graph, samplePackItems);
+  samplePack.triggerSample("blip");
 
   while (keepRunning) {
     std::string input;
     if (std::cin >> input) {
       if (input == "t") {
-        polySamplerPtr->noteOn();
-        // std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        // polySamplerPtr->noteOn();
-        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        // polySamplerPtr->noteOn();
+        samplePack.triggerSample("blip");
       }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

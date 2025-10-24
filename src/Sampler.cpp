@@ -1,11 +1,11 @@
 #include <string>
-#include "../include/PolyphonicSampler.h"
+#include "../include/Sampler.h"
 #include "../include/miniaudio.h"
 
 namespace MittelVec {
 
-PolyphonicSampler::PolyphonicSampler(const AudioContext &context, std::string samplePath, int polyphony)
-  : AudioNode(context), sample(context), polyphony(polyphony)
+Sampler::Sampler(const AudioContext &context, std::string samplePath, int polyphony, bool loop, float gain)
+  : AudioNode(context), sample(context), polyphony(polyphony), loop(loop), gain(gain)
 {
   // Load sample
   ma_decoder decoder;
@@ -49,7 +49,7 @@ PolyphonicSampler::PolyphonicSampler(const AudioContext &context, std::string sa
   }
 }
 
-SamplerVoice* PolyphonicSampler::allocateVoice() {
+SamplerVoice* Sampler::allocateVoice() {
   // Try first inactive voice.
   for (SamplerVoice& voice : voices) {
     if (!voice.active) {
@@ -63,19 +63,19 @@ SamplerVoice* PolyphonicSampler::allocateVoice() {
   return oldestVoice;
 }
 
-void PolyphonicSampler::noteOn() {
+void Sampler::noteOn() {
   SamplerVoice* freeVoice = allocateVoice();
   freeVoice->trigger();
   activeVoices.push_back(freeVoice);
 }
 
-void PolyphonicSampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffer &outputBuffer) {
+void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffer &outputBuffer) {
   outputBuffer.clear();
 
   for (SamplerVoice& voice : voices) {
     if (!voice.active) continue;
 
-    voice.processVoice(sample, outputBuffer);
+    voice.processVoice(sample, outputBuffer, loop, gain);
 
     if (!voice.active) {
       activeVoices.remove(&voice);
