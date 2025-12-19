@@ -2,8 +2,6 @@
 
 namespace MittelVec {
 
-// EnvConfig defaultEnvConfig = { 0.01f, 0.1f, 0.8f, 0.2f };
-
 Envelope::Envelope(const AudioContext& context, const EnvConfig& config)
   : AudioNode(context), attack(config.attack), decay(config.decay), sustain(config.sustain), release(config.release), sampleRate(context.sampleRate) {}
 

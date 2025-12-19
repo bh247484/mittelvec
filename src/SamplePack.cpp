@@ -7,7 +7,7 @@ SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePack
     auto [outputNodeId, outputNodePtr] = graph.addNode<Gain>(gain); // consider parameterizing gain
 
     for (auto& item : samplePackItems) {
-      auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(samplesDir + item.fileName, item.polyphony, item.loop, item.gain);
+      auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(samplesDir + item.fileName, item.polyphony, item.loop, item.gain, item.pitchShift);
       samplers[item.slug] = samplerNodePtr;
       graph.connect(samplerNodeId, outputNodeId);
     }

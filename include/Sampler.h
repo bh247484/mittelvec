@@ -2,6 +2,7 @@
 #include <list>
 #include "AudioNode.h"
 #include "Envelope.h"
+#include "PitchShift.h"
 
 namespace MittelVec {
 
@@ -11,22 +12,25 @@ struct SamplerVoice {
   bool active = false;
 
   std::unique_ptr<Envelope> envelope;
+  std::unique_ptr<PitchShift> pitchShifter;
   // std::unique_ptr<FilterNode> filter;
 
   AudioBuffer voiceBuffer;
 
   SamplerVoice(const AudioContext& context)
     : voiceBuffer(context),
-    envelope(std::make_unique<Envelope>(context))
+    envelope(std::make_unique<Envelope>(context)),
+    pitchShifter(std::make_unique<PitchShift>(context, 0))
   {}
 
   void trigger() {
     playheadIndex = 0;
     active = true;
     envelope->noteOn();
+    pitchShifter->resetSamplePosition();
   }
 
-  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer, bool loop, float gain) {
+  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer, bool loop, float gain, int pitchShift) {
     if (!active) return;
     
     voiceBuffer.clear();
@@ -49,6 +53,10 @@ struct SamplerVoice {
     }
 
     // Apply per-voice DSP
+    if (pitchShift && pitchShift != 0) {
+      pitchShifter->setPitch(pitchShift);
+      pitchShifter->applyToBuffer(voiceBuffer);
+    }
     envelope->applyToBuffer(voiceBuffer);
 
     // Sum into main output buffer
@@ -58,7 +66,7 @@ struct SamplerVoice {
     
 class Sampler : public AudioNode {
   public:
-  Sampler(const AudioContext& context, std::string samplePath, int polyphony, bool loop = false, float gain = 1.0f);
+  Sampler(const AudioContext& context, std::string samplePath, int polyphony, bool loop = false, float gain = 1.0f, int pitchShift = 0);
 
   void noteOn();
   void noteOff();
@@ -73,6 +81,7 @@ class Sampler : public AudioNode {
   std::list<SamplerVoice*> activeVoices; // indicies per voice of `voices` vector above.
   bool loop;
   float gain;
+  int pitchShift;
 };
     
 } // namespace

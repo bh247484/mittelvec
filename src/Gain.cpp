@@ -17,6 +17,7 @@ void Gain::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& o
   }
 
   // Sum all input buffers into the output buffer
+  // Revisit this... Seems wasteful if inputs.length < 1.
   for (const auto* inputBufferPtr : inputs) {
     for (int i = 0; i < outputBuffer.size(); ++i) {
       outputBuffer[i] += (*inputBufferPtr)[i];

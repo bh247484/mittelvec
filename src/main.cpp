@@ -44,6 +44,23 @@ int main() {
       6, // polyphony
       false, // loop
       5.0, // gain
+      0, // pitchShift
+    },
+    {
+      "perc2", // slug
+      "perc.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      12, // pitchShift
+    },
+    {
+      "perc3", // slug
+      "perc.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      -3, // pitchShift
     },
     {
       "perc",
@@ -51,19 +68,27 @@ int main() {
       6, // polyphony
       false, // loop
       5.0, // gain
+      0, // pitchShift
     },
   };
 
   // Pass SamplePackItems to and instantiate SamplePack.
   std::string samplesDir = "/Users/bh/Documents/game-audio/middleware-exp/sounds/";
   MittelVec::SamplePack samplePack(graph, samplePackItems, samplesDir);
-  samplePack.triggerSample("blip");
 
   while (keepRunning) {
     std::string input;
     if (std::cin >> input) {
       if (input == "b") {
         samplePack.triggerSample("blip");
+      }
+
+      if (input == "y") {
+        samplePack.triggerSample("perc2");
+      }
+
+      if (input == "r") {
+        samplePack.triggerSample("perc3");
       }
 
       if (input == "t") {
