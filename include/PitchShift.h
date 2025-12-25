@@ -9,12 +9,12 @@ public:
 
   void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
   void applyToBuffer(AudioBuffer& buffer);
-  void shiftInto(const AudioBuffer& source, AudioBuffer& target, int& playhead);
   void setPitch(int semitoneShift);
-  void resetSamplePosition();
+  void reset();
 
 private:
-  double samplePosition = 0.0;
+  // double samplePosition = 0.0;
+  double currentDelay = 0.0;
   double ratio;
   std::vector<float> ringBuffer;
   int ringWriteIdx;
@@ -23,6 +23,8 @@ private:
   float cubicInterpolation(float sm1, float s0, float s1, float s2, float fraction);
   // float sincInterpolation(const float* inputData, size_t numInputSamples, double position, int numTaps);
   double convertSemitoneToRatio(int semitoneShift);
+  float getLerpSample(double samplePosition);
+  float getCubicSample(double samplePosition);
 };
 
 } // namespace

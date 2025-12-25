@@ -1,5 +1,6 @@
 #pragma once
 #include <list>
+#include <optional>
 #include "AudioNode.h"
 #include "Envelope.h"
 #include "PitchShift.h"
@@ -27,21 +28,21 @@ struct SamplerVoice {
     playheadIndex = 0;
     active = true;
     envelope->noteOn();
-    pitchShifter->resetSamplePosition();
+    pitchShifter->reset();
   }
 
-  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer, bool loop, float gain, int pitchShift) {
+  void processVoice(const AudioBuffer& sample, AudioBuffer& outputBuffer, bool loop, float gain, int pitchShift, std::optional<EnvConfig> env) {
     if (!active) return;
     
     voiceBuffer.clear();
-    for (size_t i = 0; i < voiceBuffer.size(); ++i) {
+    for (int i = 0; i < voiceBuffer.size(); ++i) {
       // If voice has reached the end of the sample.  
       if (playheadIndex >= sample.size()) {
         if (loop) {
           playheadIndex = 0;
-          envelope->noteOn();
+          if (env.has_value()) envelope->noteOn();
         } else {
-          envelope->reset();
+          if (env.has_value()) envelope->reset();
           active = false;
           playheadIndex = 0;
           break;
@@ -57,7 +58,7 @@ struct SamplerVoice {
       pitchShifter->setPitch(pitchShift);
       pitchShifter->applyToBuffer(voiceBuffer);
     }
-    envelope->applyToBuffer(voiceBuffer);
+    if (env.has_value()) envelope->applyToBuffer(voiceBuffer);
 
     // Sum into main output buffer
     outputBuffer += voiceBuffer;
@@ -66,7 +67,15 @@ struct SamplerVoice {
     
 class Sampler : public AudioNode {
   public:
-  Sampler(const AudioContext& context, std::string samplePath, int polyphony, bool loop = false, float gain = 1.0f, int pitchShift = 0);
+  Sampler(
+    const AudioContext& context,
+    std::string samplePath,
+    int polyphony,
+    bool loop = false,
+    float gain = 1.0f,
+    int pitchShift = 0,
+    std::optional<EnvConfig> env = std::nullopt
+  );
 
   void noteOn();
   void noteOff();
@@ -82,6 +91,7 @@ class Sampler : public AudioNode {
   bool loop;
   float gain;
   int pitchShift;
+  std::optional<EnvConfig> env;
 };
     
 } // namespace

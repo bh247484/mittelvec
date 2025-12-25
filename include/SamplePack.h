@@ -2,6 +2,7 @@
 #include "./AudioGraph.h"
 #include "./Gain.h"
 #include "./Sampler.h"
+#include <optional>
 
 namespace MittelVec {
 
@@ -11,9 +12,8 @@ struct SamplePackItem {
   int polyphony;
   bool loop;
   float gain;
-  EnvConfig envConfig;
   int pitchShift;
-  // FilterConfig filterConfig;
+  std::optional<EnvConfig> envConfig;
 
   // Constructor enforces required fields and default value for polyphony.
   SamplePackItem(
@@ -22,8 +22,10 @@ struct SamplePackItem {
     int polyphony = 1,
     bool loop = false,
     float gain = 1.0,
-    int pitchShift = 0
-  ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop), gain(gain), pitchShift(pitchShift) {}
+    int pitchShift = 0,
+    std::optional<EnvConfig> env = std::nullopt
+  ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop),
+      gain(gain), pitchShift(pitchShift), envConfig(env) {}
 };
 
 class SamplePack {

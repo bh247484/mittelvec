@@ -4,8 +4,8 @@
 
 namespace MittelVec {
 
-Sampler::Sampler(const AudioContext &context, std::string samplePath, int polyphony, bool loop, float gain, int pitchShift)
-  : AudioNode(context), sample(context), polyphony(polyphony), loop(loop), gain(gain), pitchShift(pitchShift)
+Sampler::Sampler(const AudioContext &context, std::string samplePath, int polyphony, bool loop, float gain, int pitchShift, std::optional<EnvConfig> env)
+  : AudioNode(context), sample(context), polyphony(polyphony), loop(loop), gain(gain), pitchShift(pitchShift), env(env)
 {
   // Load sample
   ma_decoder decoder;
@@ -33,14 +33,10 @@ Sampler::Sampler(const AudioContext &context, std::string samplePath, int polyph
     if (result != MA_SUCCESS) {
       printf("Failed to read WAV file.\n");
     }
-
-    // Optionally set frame count
-    // sample.frames = static_cast<int>(framesRead);
   }
   
   // Cleanup miniaudio decoder.
   ma_decoder_uninit(&decoder);
-
 
   // Setup voices.
   voices.reserve(polyphony);
@@ -75,7 +71,7 @@ void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffe
   for (SamplerVoice& voice : voices) {
     if (!voice.active) continue;
 
-    voice.processVoice(sample, outputBuffer, loop, gain, pitchShift);
+    voice.processVoice(sample, outputBuffer, loop, gain, pitchShift, env);
 
     if (!voice.active) {
       activeVoices.remove(&voice);

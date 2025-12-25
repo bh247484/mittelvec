@@ -15,7 +15,7 @@
 #include "../include/SamplePack.h"
 
 const int BUFFER_SIZE = 512;
-const int NUM_CHANNELS = 2;
+const int NUM_CHANNELS = 1; // keep mono for now.
 const float SAMPLE_RATE = 44100.0f;
 
 std::atomic<bool> keepRunning(true);
@@ -39,6 +39,30 @@ int main() {
   // Declare SamplePackItems.
   std::vector<MittelVec::SamplePackItem> samplePackItems = {
     {
+      "nbc-chimes", // slug
+      "nbc-chimes.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      0, // pitchShift
+    },
+    {
+      "nbc-chimes-high", // slug
+      "nbc-chimes.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      7, // pitchShift
+    },
+    {
+      "nbc-chimes-low", // slug
+      "nbc-chimes.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      -7, // pitchShift
+    },
+    {
       "blip", // slug
       "blip.wav",
       6, // polyphony
@@ -47,12 +71,28 @@ int main() {
       0, // pitchShift
     },
     {
+      "blip-high", // slug
+      "blip.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      8, // pitchShift
+    },
+    {
+      "blip-low", // slug
+      "blip.wav",
+      6, // polyphony
+      false, // loop
+      5.0, // gain
+      -5, // pitchShift
+    },
+    {
       "perc2", // slug
       "perc.wav",
       6, // polyphony
       false, // loop
       5.0, // gain
-      12, // pitchShift
+      2, // pitchShift
     },
     {
       "perc3", // slug
@@ -79,8 +119,28 @@ int main() {
   while (keepRunning) {
     std::string input;
     if (std::cin >> input) {
+      if (input == "k") {
+        samplePack.triggerSample("nbc-chimes");
+      }
+
+      if (input == "l") {
+        samplePack.triggerSample("nbc-chimes-high");
+      }
+
+      if (input == "j") {
+        samplePack.triggerSample("nbc-chimes-low");
+      }
+
       if (input == "b") {
         samplePack.triggerSample("blip");
+      }
+
+      if (input == "n") {
+        samplePack.triggerSample("blip-high");
+      }
+
+      if (input == "v") {
+        samplePack.triggerSample("blip-low");
       }
 
       if (input == "y") {
