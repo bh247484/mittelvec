@@ -13,7 +13,8 @@ SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePack
         item.loop,
         item.gain,
         item.pitchShift,
-        item.envConfig
+        item.envConfig,
+        item.filterConfig
       );
       samplers[item.slug] = samplerNodePtr;
       graph.connect(samplerNodeId, outputNodeId);

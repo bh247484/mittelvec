@@ -4,8 +4,19 @@
 
 namespace MittelVec {
 
-Sampler::Sampler(const AudioContext &context, std::string samplePath, int polyphony, bool loop, float gain, int pitchShift, std::optional<EnvConfig> env)
-  : AudioNode(context), sample(context), polyphony(polyphony), loop(loop), gain(gain), pitchShift(pitchShift), env(env)
+Sampler::Sampler(
+  const AudioContext &context,
+  std::string samplePath,
+  int polyphony,
+  bool loop,
+  float gain,
+  int pitchShift,
+  std::optional<EnvConfig> envConfig,
+  std::optional<FilterConfig> filterConfig
+)
+  : AudioNode(context), sample(context), polyphony(polyphony),
+  loop(loop), gain(gain), pitchShift(pitchShift),
+  envConfig(envConfig), filterConfig(filterConfig)
 {
   // Load sample
   ma_decoder decoder;
@@ -71,7 +82,15 @@ void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffe
   for (SamplerVoice& voice : voices) {
     if (!voice.active) continue;
 
-    voice.processVoice(sample, outputBuffer, loop, gain, pitchShift, env);
+    voice.processVoice(
+      sample,
+      outputBuffer,
+      loop,
+      gain,
+      pitchShift,
+      envConfig,
+      filterConfig
+    );
 
     if (!voice.active) {
       activeVoices.remove(&voice);

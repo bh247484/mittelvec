@@ -14,6 +14,7 @@ struct SamplePackItem {
   float gain;
   int pitchShift;
   std::optional<EnvConfig> envConfig;
+  std::optional<FilterConfig> filterConfig;
 
   // Constructor enforces required fields and default value for polyphony.
   SamplePackItem(
@@ -23,9 +24,10 @@ struct SamplePackItem {
     bool loop = false,
     float gain = 1.0,
     int pitchShift = 0,
-    std::optional<EnvConfig> env = std::nullopt
+    std::optional<EnvConfig> env = std::nullopt,
+    std::optional<FilterConfig> filterConfig = std::nullopt
   ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop),
-      gain(gain), pitchShift(pitchShift), envConfig(env) {}
+      gain(gain), pitchShift(pitchShift), envConfig(env), filterConfig(filterConfig) {}
 };
 
 class SamplePack {

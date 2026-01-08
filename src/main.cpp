@@ -15,7 +15,7 @@
 #include "../include/SamplePack.h"
 
 const int BUFFER_SIZE = 512;
-const int NUM_CHANNELS = 1; // keep mono for now.
+const int NUM_CHANNELS = 1; // Keep mono for now, will need to refactor dsp to include channels in processing loops.
 const float SAMPLE_RATE = 44100.0f;
 
 std::atomic<bool> keepRunning(true);
