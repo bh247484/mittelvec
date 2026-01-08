@@ -1,4 +1,4 @@
 build/
 sounds/
 dev-notes.md
-include/miniaudio.h
+miniaudio.h

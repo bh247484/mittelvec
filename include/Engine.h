@@ -2,7 +2,7 @@
 #include "AudioBuffer.h"
 #include "AudioContext.h"
 #include "AudioGraph.h"
-#include "miniaudio.h"
+#include "../miniaudio.h"
 
 namespace MittelVec {
 

@@ -1,6 +1,6 @@
 #include <string>
 #include "../include/Sampler.h"
-#include "../include/miniaudio.h"
+#include "../miniaudio.h"
 
 namespace MittelVec {
 
