@@ -1,5 +1,5 @@
 // MittelVec - Single-Header Library
-// Generated on 2026-01-07
+// Generated on 2026-02-09
 
 #ifndef MITTELVEC_H
 #define MITTELVEC_H
@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <random>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -213,6 +214,33 @@ public:
 
 private:
     float gain;
+};
+
+
+struct MusicCueItem {
+  std::string slug;
+  std::string fileName;
+  bool loop;
+  float gain;
+
+  MusicCueItem(
+    std::string slug,
+    std::string fileName,
+    bool loop = true,
+    float gain = 1.0f
+  ) : slug(slug), fileName(fileName), loop(loop), gain(gain) {}
+};
+
+class MusicCueOrchestrator {
+public:
+  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCueItem> cues, std::string samplesDir);
+
+  void playCue(const std::string& slug);
+  void stopCue(const std::string& slug);
+
+private:
+  AudioGraph& graph;
+  std::unordered_map<std::string, Sampler*> samplers;
 };
 
     
@@ -933,6 +961,39 @@ void Gain::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& o
   // Apply gain to the summed signal
   for (int i = 0; i < outputBuffer.size(); ++i) {
     outputBuffer[i] *= gain;
+  }
+}
+
+
+
+
+MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCueItem> cues, std::string samplesDir)
+  : graph(graph) {
+  
+  auto [outputNodeId, outputNodePtr] = graph.addNode<Gain>(1.0f);
+
+  for (const auto& item : cues) {
+    auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(
+      samplesDir + item.fileName,
+      1, // polyphony
+      item.loop,
+      item.gain
+    );
+    
+    samplers[item.slug] = samplerNodePtr;
+    graph.connect(samplerNodeId, outputNodeId);
+  }
+}
+
+void MusicCueOrchestrator::playCue(const std::string& slug) {
+  if (samplers.count(slug)) {
+    samplers[slug]->noteOn();
+  }
+}
+
+void MusicCueOrchestrator::stopCue(const std::string& slug) {
+  if (samplers.count(slug)) {
+    samplers[slug]->noteOff();
   }
 }
 
