@@ -39,7 +39,7 @@ private:
   float attack, decay, sustain, release;
   float sampleRate;
   float currentLevel;
-  bool skipSustain = true; // hard coding this for now, may eventually find use case for noteOff/sustains.
+  bool skipSustain = false; // hard coding this for now, may eventually find use case for noteOff/sustains.
 };
 
 } // namespace

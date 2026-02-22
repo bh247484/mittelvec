@@ -21,7 +21,9 @@ MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicC
       samplesDir + item.fileName,
       1, // polyphony
       item.loop,
-      item.gain
+      item.gain,
+      0, // pitchShift
+      EnvConfig { 0.1f, 0.1f, 1.0f, 0.5f } // attack, decay, sustain, release
     );
     
     samplers[item.slug] = samplerNodePtr;
