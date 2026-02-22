@@ -13,6 +13,7 @@
 #include "../include/AudioContext.h"
 #include "../include/Sampler.h"
 #include "../include/SamplePack.h"
+#include "../include/MusicCueOrchestrator.h"
 
 const int BUFFER_SIZE = 512;
 const int NUM_CHANNELS = 1; // Keep mono for now, will need to refactor dsp to include channels in processing loops.
@@ -116,6 +117,22 @@ int main() {
   std::string samplesDir = "/Users/bh/Documents/game-audio/middleware-exp/sounds/";
   MittelVec::SamplePack samplePack(graph, samplePackItems, samplesDir);
 
+  std::vector<MittelVec::MusicCue> musicCues = {
+    {
+      "cue-1", // slug
+      "cue-1.wav", // fileName
+      true, // loop
+    },
+    {
+      "cue-2", // slug
+      "cue-2.wav", // fileName
+      true, // loop
+    },
+  };
+
+  std::string cuesDir = "/Users/bh/Documents/game-audio/middleware-exp/cues/";
+  MittelVec::MusicCueOrchestrator cueOrchestrator(graph, musicCues, cuesDir);
+
   while (keepRunning) {
     std::string input;
     if (std::cin >> input) {
@@ -153,6 +170,18 @@ int main() {
 
       if (input == "t") {
         samplePack.triggerSample("perc");
+      }
+
+      if (input == "q") {
+        cueOrchestrator.playCue("cue-1");
+      }
+
+      if (input == "w") {
+        cueOrchestrator.playCue("cue-2");
+      }
+
+      if (input == "e") {
+        cueOrchestrator.stopCue();
       }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));

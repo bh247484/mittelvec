@@ -76,27 +76,39 @@ void Sampler::noteOn() {
   activeVoices.push_back(freeVoice);
 }
 
+void Sampler::noteOff() {
+  for (SamplerVoice* voice : activeVoices) {
+    if (envConfig.has_value()) {
+      voice->envelope->noteOff();
+    } else {
+      voice->active = false;
+    }
+  }
+}
+
 void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffer &outputBuffer) {
   outputBuffer.clear();
 
   for (SamplerVoice& voice : voices) {
-    if (!voice.active) continue;
+    if (voice.active) {
+      voice.processVoice(
+        sample,
+        outputBuffer,
+        loop,
+        gain,
+        pitchShift,
+        envConfig,
+        filterConfig
+      );
+    }
 
-    voice.processVoice(
-      sample,
-      outputBuffer,
-      loop,
-      gain,
-      pitchShift,
-      envConfig,
-      filterConfig
-    );
-
+    // Clean up activeVoices if voice is now inactive (or was already inactive but still in the list)
     if (!voice.active) {
+      // Note: activeVoices.remove(&voice) is safe even if &voice is not in the list.
+      // However, it's $O(N)$. For small polyphony it's fine.
       activeVoices.remove(&voice);
     }
   }
-
 }
 
 }

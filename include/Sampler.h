@@ -70,7 +70,14 @@ struct SamplerVoice {
       pitchShifter->setPitch(pitchShift);
       pitchShifter->applyToBuffer(voiceBuffer);
     }
-    if (envConfig.has_value()) envelope->applyToBuffer(voiceBuffer);
+
+    if (envConfig.has_value()) {
+      envelope->applyToBuffer(voiceBuffer);
+      if (!envelope->isActive()) {
+        active = false;
+        playheadIndex = 0;
+      }
+    }
 
     if (filterConfig.has_value()) {
       filter->setMode(filterConfig->mode);

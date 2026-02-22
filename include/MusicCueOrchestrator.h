@@ -8,13 +8,13 @@
 
 namespace MittelVec {
 
-struct MusicCueItem {
+struct MusicCue {
   std::string slug;
   std::string fileName;
   bool loop;
   float gain;
 
-  MusicCueItem(
+  MusicCue(
     std::string slug,
     std::string fileName,
     bool loop = true,
@@ -24,14 +24,15 @@ struct MusicCueItem {
 
 class MusicCueOrchestrator {
 public:
-  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCueItem> cues, std::string samplesDir);
+  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir);
 
   void playCue(const std::string& slug);
-  void stopCue(const std::string& slug);
+  void stopCue();
 
 private:
   AudioGraph& graph;
   std::unordered_map<std::string, Sampler*> samplers;
+  std::string currentCueSlug;
 };
 
 } // namespace MittelVec
