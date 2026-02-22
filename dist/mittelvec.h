@@ -1,5 +1,5 @@
 // MittelVec - Single-Header Library
-// Generated on 2026-02-09
+// Generated on 2026-02-22
 
 #ifndef MITTELVEC_H
 #define MITTELVEC_H
@@ -167,7 +167,7 @@ private:
   float attack, decay, sustain, release;
   float sampleRate;
   float currentLevel;
-  bool skipSustain = true; // hard coding this for now, may eventually find use case for noteOff/sustains.
+  bool skipSustain = false; // hard coding this for now, may eventually find use case for noteOff/sustains.
 };
 
 
@@ -217,13 +217,13 @@ private:
 };
 
 
-struct MusicCueItem {
+struct MusicCue {
   std::string slug;
   std::string fileName;
   bool loop;
   float gain;
 
-  MusicCueItem(
+  MusicCue(
     std::string slug,
     std::string fileName,
     bool loop = true,
@@ -233,14 +233,15 @@ struct MusicCueItem {
 
 class MusicCueOrchestrator {
 public:
-  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCueItem> cues, std::string samplesDir);
+  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir);
 
   void playCue(const std::string& slug);
-  void stopCue(const std::string& slug);
+  void stopCue();
 
 private:
   AudioGraph& graph;
   std::unordered_map<std::string, Sampler*> samplers;
+  std::string currentCueSlug;
 };
 
     
@@ -382,7 +383,14 @@ struct SamplerVoice {
       pitchShifter->setPitch(pitchShift);
       pitchShifter->applyToBuffer(voiceBuffer);
     }
-    if (envConfig.has_value()) envelope->applyToBuffer(voiceBuffer);
+
+    if (envConfig.has_value()) {
+      envelope->applyToBuffer(voiceBuffer);
+      if (!envelope->isActive()) {
+        active = false;
+        playheadIndex = 0;
+      }
+    }
 
     if (filterConfig.has_value()) {
       filter->setMode(filterConfig->mode);
@@ -735,7 +743,14 @@ void Engine::stop() {
 
 
 Envelope::Envelope(const AudioContext& context, const EnvConfig& config)
-  : AudioNode(context), attack(config.attack), decay(config.decay), sustain(config.sustain), release(config.release), sampleRate(context.sampleRate) {}
+  : AudioNode(context),
+    state(Idle),
+    attack(config.attack),
+    decay(config.decay),
+    sustain(config.sustain),
+    release(config.release),
+    sampleRate(context.sampleRate),
+    currentLevel(0.0f) {}
 
 float Envelope::getNextLevel() {
   switch (state) {
@@ -967,17 +982,27 @@ void Gain::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& o
 
 
 
-MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCueItem> cues, std::string samplesDir)
+MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir)
   : graph(graph) {
   
   auto [outputNodeId, outputNodePtr] = graph.addNode<Gain>(1.0f);
 
   for (const auto& item : cues) {
+    if (samplers.find(item.slug) != samplers.end()) {
+      throw std::runtime_error("Duplicate music cue slug: " + item.slug);
+    }
+
+    if (item.slug.empty()) {
+      throw std::runtime_error("Cue slug name cannot be empty string.");
+    }
+
     auto [samplerNodeId, samplerNodePtr] = graph.addNode<Sampler>(
       samplesDir + item.fileName,
       1, // polyphony
       item.loop,
-      item.gain
+      item.gain,
+      0, // pitchShift
+      EnvConfig { 0.1f, 0.1f, 1.0f, 0.5f } // attack, decay, sustain, release
     );
     
     samplers[item.slug] = samplerNodePtr;
@@ -986,14 +1011,24 @@ MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicC
 }
 
 void MusicCueOrchestrator::playCue(const std::string& slug) {
+  if (slug == currentCueSlug) {
+    return;
+  }
+
   if (samplers.count(slug)) {
+    if (!currentCueSlug.empty()) {
+      stopCue();
+    }
+    
     samplers[slug]->noteOn();
+    currentCueSlug = slug;
   }
 }
 
-void MusicCueOrchestrator::stopCue(const std::string& slug) {
-  if (samplers.count(slug)) {
-    samplers[slug]->noteOff();
+void MusicCueOrchestrator::stopCue() {
+  if (!currentCueSlug.empty() && samplers.count(currentCueSlug)) {
+    samplers[currentCueSlug]->noteOff();
+    currentCueSlug = "";
   }
 }
 
@@ -1245,27 +1280,39 @@ void Sampler::noteOn() {
   activeVoices.push_back(freeVoice);
 }
 
+void Sampler::noteOff() {
+  for (SamplerVoice* voice : activeVoices) {
+    if (envConfig.has_value()) {
+      voice->envelope->noteOff();
+    } else {
+      voice->active = false;
+    }
+  }
+}
+
 void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffer &outputBuffer) {
   outputBuffer.clear();
 
   for (SamplerVoice& voice : voices) {
-    if (!voice.active) continue;
+    if (voice.active) {
+      voice.processVoice(
+        sample,
+        outputBuffer,
+        loop,
+        gain,
+        pitchShift,
+        envConfig,
+        filterConfig
+      );
+    }
 
-    voice.processVoice(
-      sample,
-      outputBuffer,
-      loop,
-      gain,
-      pitchShift,
-      envConfig,
-      filterConfig
-    );
-
+    // Clean up activeVoices if voice is now inactive (or was already inactive but still in the list)
     if (!voice.active) {
+      // Note: activeVoices.remove(&voice) is safe even if &voice is not in the list.
+      // However, it's $O(N)$. For small polyphony it's fine.
       activeVoices.remove(&voice);
     }
   }
-
 }
 
 } // namespace MittelVec
