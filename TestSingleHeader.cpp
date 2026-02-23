@@ -54,38 +54,38 @@ int main() {
     std::string cuesDir = "/Users/bh/Documents/game-audio/middleware-exp/cues/";
     MittelVec::MusicCueOrchestrator cueOrchestrator(graph, musicCues, cuesDir);
 
+    std::unordered_map<char, std::function<void()>> inputMap = {
+        // Killswitch
+        {'x', [&]() { keepRunning = false; }},
+        
+        // Samples
+        {'k', [&]() { samplePack.triggerSample("nbc-chimes"); }},
+        {'l', [&]() { samplePack.triggerSample("nbc-chimes-high"); }},
+        {'j', [&]() { samplePack.triggerSample("nbc-chimes-low"); }},
+        {'b', [&]() { samplePack.triggerSample("blip"); }},
+        {'n', [&]() { samplePack.triggerSample("blip-high"); }},
+        {'v', [&]() { samplePack.triggerSample("blip-low"); }},
+        {'y', [&]() { samplePack.triggerSample("perc2"); }},
+        {'r', [&]() { samplePack.triggerSample("perc3"); }},
+        {'t', [&]() { samplePack.triggerSample("perc"); }},
+
+        // Music Cues
+        {'q', [&]() { cueOrchestrator.playCue("cue-1"); }},
+        {'w', [&]() { cueOrchestrator.playCue("cue-2"); }},
+        {'e', [&]() { cueOrchestrator.stopCue(); }}
+    };
+
     while (keepRunning) {
-        std::string input;
+        char input;
         if (std::cin >> input) {
-            if (input == "x") {
-                keepRunning = false;
-            } else if (input == "k") {
-                samplePack.triggerSample("nbc-chimes");
-            } else if (input == "l") {
-                samplePack.triggerSample("nbc-chimes-high");
-            } else if (input == "j") {
-                samplePack.triggerSample("nbc-chimes-low");
-            } else if (input == "b") {
-                samplePack.triggerSample("blip");
-            } else if (input == "n") {
-                samplePack.triggerSample("blip-high");
-            } else if (input == "v") {
-                samplePack.triggerSample("blip-low");
-            } else if (input == "y") {
-                samplePack.triggerSample("perc2");
-            } else if (input == "r") {
-                samplePack.triggerSample("perc3");
-            } else if (input == "t") {
-                samplePack.triggerSample("perc");
-            } else if (input == "q") {
-                cueOrchestrator.playCue("cue-1");
-            } else if (input == "w") {
-                cueOrchestrator.playCue("cue-2");
-            } else if (input == "e") {
-                cueOrchestrator.stopCue();
+            // Check if the key exists in our map
+            if (inputMap.count(input)) {
+                inputMap[input](); // Execute the associated lambda
+            } else {
+                std::cout << "Unknown command: " << input << std::endl;
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Shorter sleep for better latency
     }
 
     engine.stop();
