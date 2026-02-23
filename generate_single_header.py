@@ -14,26 +14,10 @@ EXCLUDE_FILES = ["main.cpp"] # Don't include main.cpp used to test lib locally.
 OUTPUT_FILE = "dist/mittelvec.h"
 IMPLEMENTATION_GUARD = "MITTELVEC_IMPLEMENTATION"
 
-# Ensure these are processed first in this order to satisfy dependencies.
-PREFERRED_ORDER = [
-    "AudioContext.h",
-    "AudioBuffer.h",
-    "AudioNode.h",
-    "Gain.h",
-    "Envelope.h",
-    "Filter.h",
-    "PitchShift.h",
-    "Sampler.h",
-    "AudioGraph.h",
-    "MusicCueOrchestrator.h",
-    "SamplePack.h",
-    "NoiseGenerator.h",
-    "Engine.h"
-]
 # --- End Configuration ---
 
 def get_project_files(directory, extensions):
-    """Gets a list of files with given extensions from a directory, respecting PREFERRED_ORDER."""
+    """Gets a list of files with given extensions from a directory."""
     files = []
     for root, _, filenames in os.walk(directory):
         for filename in filenames:
@@ -44,23 +28,46 @@ def get_project_files(directory, extensions):
     
     # Sort files naturally first
     files.sort()
-
-    if directory == INCLUDE_DIR:
-        ordered_files = []
-        # Add preferred files first
-        for preferred in PREFERRED_ORDER:
-            for f in files:
-                if os.path.basename(f) == preferred:
-                    ordered_files.append(f)
-                    break
-        
-        # Add remaining files
-        for f in files:
-            if f not in ordered_files:
-                ordered_files.append(f)
-        return ordered_files
-    
     return files
+
+def get_local_dependencies(filepath):
+    """Scans a file for local #include "..." statements."""
+    deps = []
+    with open(filepath, 'r') as f:
+        content = f.read()
+        # Match #include "..." or #include "./..."
+        matches = re.findall(r'^\s*#include\s*"(.*?)"', content, re.MULTILINE)
+        for m in matches:
+            deps.append(os.path.basename(m))
+    return deps
+
+def sort_headers_topologically(header_files):
+    """Sorts header files so that dependencies come before dependents."""
+    name_to_path = {os.path.basename(f): f for f in header_files}
+    order = []
+    visited = set()
+    temp_visited = set()
+
+    def visit(n):
+        if n in temp_visited:
+            # If a cycle is detected, we just return to avoid infinite recursion.
+            # In a real C++ project, this shouldn't happen with headers.
+            return 
+        if n not in visited:
+            temp_visited.add(n)
+            if n in name_to_path:
+                deps = get_local_dependencies(name_to_path[n])
+                for d in deps:
+                    if d in name_to_path:
+                        visit(d)
+            temp_visited.remove(n)
+            visited.add(n)
+            order.append(n)
+
+    for name in sorted(name_to_path.keys()):
+        visit(name)
+
+    return [name_to_path[name] for name in order]
 
 def strip_namespace(content):
     """Strips the namespace block from the file content."""
@@ -102,6 +109,7 @@ def create_single_header():
         os.makedirs(os.path.dirname(OUTPUT_FILE))
 
     header_files = get_project_files(INCLUDE_DIR, ['.h', '.hpp'])
+    header_files = sort_headers_topologically(header_files)
     source_files = get_project_files(SRC_DIR, ['.cpp', '.c'])
 
     # Matches any #include "..." (local/relative)

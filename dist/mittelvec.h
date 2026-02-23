@@ -75,15 +75,64 @@ public:
 };
 
 
-class Gain : public AudioNode {
-public:
-    explicit Gain(const AudioContext& context, float gain);
 
-    void setGain(float gain);
-    void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
+class AudioGraph {
+public:
+    AudioGraph(const AudioContext& context);
+
+    template <typename NodeType, typename... Args>
+    std::pair<int, NodeType*> addNode(Args &&...args)
+    {
+      int id = nextNodeId++;
+      auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
+      nodes[id] = std::move(node);
+      isGraphDirty = true;
+      return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
+    }
+
+    void removeNode(int nodeId);
+    void connect(int sourceNodeId, int destNodeId);
+    void disconnect(int sourceNodeId, int destNodeId);
+    void processGraph(AudioBuffer& graphOutputBuffer);
+    void setAudioContext(AudioContext newContext);
+
+    void updateProcessOrder();
+    AudioContext audioContext;
+    std::unordered_map<int, std::unique_ptr<AudioNode>> nodes;
+    std::unordered_map<int, std::vector<int>> connections;
+    std::unordered_map<int, std::vector<int>> reverseConnections;
+    int nextNodeId;
+    std::vector<int> processOrder;
+    bool isGraphDirty;
+};
+
+
+struct CallbackData {
+  AudioGraph* graph = nullptr;
+  AudioBuffer* graphOutput = nullptr;
+  AudioContext* globalContext = nullptr;
+};
+
+class Engine {
+public:
+  Engine(AudioContext globalContext);
+  ~Engine();
+
+  AudioContext globalContext;
+  AudioGraph graph;
+  AudioBuffer output;
+
+  void start();
+  void stop();
 
 private:
-    float gain;
+  void initMiniaudio();
+
+  // Miniaudio
+  ma_result result;
+  ma_device_config config;
+  ma_device device;
+  CallbackData cbData;
 };
 
 
@@ -158,6 +207,18 @@ private:
   
   // State memory (Z-delay lines)
   double z1_x = 0, z2_x = 0, z1_y = 0, z2_y = 0;
+};
+
+
+class Gain : public AudioNode {
+public:
+    explicit Gain(const AudioContext& context, float gain);
+
+    void setGain(float gain);
+    void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
+
+private:
+    float gain;
 };
 
 
@@ -301,38 +362,6 @@ class Sampler : public AudioNode {
     
 
 
-
-class AudioGraph {
-public:
-    AudioGraph(const AudioContext& context);
-
-    template <typename NodeType, typename... Args>
-    std::pair<int, NodeType*> addNode(Args &&...args)
-    {
-      int id = nextNodeId++;
-      auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
-      nodes[id] = std::move(node);
-      isGraphDirty = true;
-      return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
-    }
-
-    void removeNode(int nodeId);
-    void connect(int sourceNodeId, int destNodeId);
-    void disconnect(int sourceNodeId, int destNodeId);
-    void processGraph(AudioBuffer& graphOutputBuffer);
-    void setAudioContext(AudioContext newContext);
-
-    void updateProcessOrder();
-    AudioContext audioContext;
-    std::unordered_map<int, std::unique_ptr<AudioNode>> nodes;
-    std::unordered_map<int, std::vector<int>> connections;
-    std::unordered_map<int, std::vector<int>> reverseConnections;
-    int nextNodeId;
-    std::vector<int> processOrder;
-    bool isGraphDirty;
-};
-
-
 struct MusicCue {
   std::string slug;
   std::string fileName;
@@ -359,6 +388,20 @@ private:
   std::unordered_map<std::string, Sampler*> samplers;
   std::string currentCueSlug;
 };
+
+    
+class NoiseGenerator : public AudioNode {
+    public:
+    NoiseGenerator(const AudioContext& context);
+    
+    void process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
+    
+    private:
+    std::random_device randomDevice;
+    std::mt19937 randomGen;
+    std::uniform_real_distribution<float> dist;
+};
+    
 
 
 struct SamplePackItem {
@@ -395,49 +438,6 @@ public:
 
 private:
   AudioGraph& graph;
-};
-
-    
-class NoiseGenerator : public AudioNode {
-    public:
-    NoiseGenerator(const AudioContext& context);
-    
-    void process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
-    
-    private:
-    std::random_device randomDevice;
-    std::mt19937 randomGen;
-    std::uniform_real_distribution<float> dist;
-};
-    
-
-
-struct CallbackData {
-  AudioGraph* graph = nullptr;
-  AudioBuffer* graphOutput = nullptr;
-  AudioContext* globalContext = nullptr;
-};
-
-class Engine {
-public:
-  Engine(AudioContext globalContext);
-  ~Engine();
-
-  AudioContext globalContext;
-  AudioGraph graph;
-  AudioBuffer output;
-
-  void start();
-  void stop();
-
-private:
-  void initMiniaudio();
-
-  // Miniaudio
-  ma_result result;
-  ma_device_config config;
-  ma_device device;
-  CallbackData cbData;
 };
 } // namespace MittelVec
 

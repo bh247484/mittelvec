@@ -2,6 +2,8 @@
 #include "./AudioGraph.h"
 #include "./Gain.h"
 #include "./Sampler.h"
+#include "./Envelope.h"
+#include "./Filter.h"
 #include <optional>
 
 namespace MittelVec {
