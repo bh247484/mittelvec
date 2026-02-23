@@ -13,10 +13,27 @@ SRC_DIR = "src"
 EXCLUDE_FILES = ["main.cpp"] # Don't include main.cpp used to test lib locally.
 OUTPUT_FILE = "dist/mittelvec.h"
 IMPLEMENTATION_GUARD = "MITTELVEC_IMPLEMENTATION"
+
+# Ensure these are processed first in this order to satisfy dependencies.
+PREFERRED_ORDER = [
+    "AudioContext.h",
+    "AudioBuffer.h",
+    "AudioNode.h",
+    "Gain.h",
+    "Envelope.h",
+    "Filter.h",
+    "PitchShift.h",
+    "Sampler.h",
+    "AudioGraph.h",
+    "MusicCueOrchestrator.h",
+    "SamplePack.h",
+    "NoiseGenerator.h",
+    "Engine.h"
+]
 # --- End Configuration ---
 
 def get_project_files(directory, extensions):
-    """Gets a sorted list of files with given extensions from a directory."""
+    """Gets a list of files with given extensions from a directory, respecting PREFERRED_ORDER."""
     files = []
     for root, _, filenames in os.walk(directory):
         for filename in filenames:
@@ -24,7 +41,26 @@ def get_project_files(directory, extensions):
             if any(filename.endswith(ext) for ext in extensions):
                 if filename not in EXCLUDE_FILES:
                     files.append(os.path.join(root, filename))
-    return sorted(files)
+    
+    # Sort files naturally first
+    files.sort()
+
+    if directory == INCLUDE_DIR:
+        ordered_files = []
+        # Add preferred files first
+        for preferred in PREFERRED_ORDER:
+            for f in files:
+                if os.path.basename(f) == preferred:
+                    ordered_files.append(f)
+                    break
+        
+        # Add remaining files
+        for f in files:
+            if f not in ordered_files:
+                ordered_files.append(f)
+        return ordered_files
+    
+    return files
 
 def strip_namespace(content):
     """Strips the namespace block from the file content."""
@@ -68,8 +104,6 @@ def create_single_header():
     header_files = get_project_files(INCLUDE_DIR, ['.h', '.hpp'])
     source_files = get_project_files(SRC_DIR, ['.cpp', '.c'])
 
-    header_basenames = [os.path.basename(f) for f in header_files]
-    
     # Matches any #include "..." (local/relative)
     local_include_pattern = re.compile(r'^\s*#include\s*".*?"', re.MULTILINE)
 
@@ -93,7 +127,7 @@ def create_single_header():
                 # 1. Hoist system includes
                 if system_include_pattern.match(line):
                     system_includes.add(line.strip())
-                # 2. STRIP local includes (The Fix)
+                # 2. STRIP local includes
                 elif local_include_pattern.match(line):
                     continue 
                 else:
@@ -101,7 +135,26 @@ def create_single_header():
             
             processed_headers.append("\n".join(cleaned_lines))
 
-    # --- 2. Write Output ---
+    # --- 2. Process Source Files (just for hoisting system includes) ---
+    processed_sources = []
+    for filepath in source_files:
+        with open(filepath, 'r') as infile:
+            content = strip_namespace(infile.read())
+            
+            lines = content.splitlines()
+            cleaned_lines = []
+            for line in lines:
+                # 1. Hoist system includes
+                if system_include_pattern.match(line):
+                    system_includes.add(line.strip())
+                # 2. STRIP local includes
+                elif local_include_pattern.match(line):
+                    continue 
+                else:
+                    cleaned_lines.append(line)
+            processed_sources.append("\n".join(cleaned_lines))
+
+    # --- 3. Write Output ---
     with open(OUTPUT_FILE, 'w') as outfile:
         header_guard = f"{PROJECT_NAME.upper()}_H"
         outfile.write(f"// {PROJECT_NAME} - Single-Header Library\n")
@@ -141,18 +194,9 @@ def create_single_header():
         # Begin namespace.
         outfile.write(f"namespace {NAMESPACE_NAME} {{\n\n")
 
-        # --- 3. Process Source Files ---
-        for filepath in source_files:
-            with open(filepath, 'r') as infile:
-                content = strip_namespace(infile.read())
-                
-                # We can use regex sub here for speed on the whole block
-                # Remove local includes
-                content = local_include_pattern.sub('', content)
-                # Remove system includes (already hoisted)
-                content = system_include_pattern.sub('', content)
-                
-                outfile.write(content)
+        # Write Source Implementations
+        for content in processed_sources:
+            outfile.write(content)
             outfile.write("\n")
             
         outfile.write(f"}} // namespace {NAMESPACE_NAME}\n\n")

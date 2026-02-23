@@ -7,12 +7,17 @@
 // System includes 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // NOTE! This lib depends on miniaudio (a single header file audio lib)
@@ -21,6 +26,13 @@
 
 namespace MittelVec {
 
+
+
+struct AudioContext {
+  int bufferSize;
+  int numChannels;
+  float sampleRate;
+};
 
 
 class AudioBuffer {
@@ -52,45 +64,6 @@ private:
 };
 
 
-struct AudioContext {
-  int bufferSize;
-  int numChannels;
-  float sampleRate;
-};
-
-
-
-class AudioGraph {
-public:
-    AudioGraph(const AudioContext& context);
-
-    template <typename NodeType, typename... Args>
-    std::pair<int, NodeType*> addNode(Args &&...args)
-    {
-      int id = nextNodeId++;
-      auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
-      nodes[id] = std::move(node);
-      isGraphDirty = true;
-      return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
-    }
-
-    void removeNode(int nodeId);
-    void connect(int sourceNodeId, int destNodeId);
-    void disconnect(int sourceNodeId, int destNodeId);
-    void processGraph(AudioBuffer& graphOutputBuffer);
-    void setAudioContext(AudioContext newContext);
-
-    void updateProcessOrder();
-    AudioContext audioContext;
-    std::unordered_map<int, std::unique_ptr<AudioNode>> nodes;
-    std::unordered_map<int, std::vector<int>> connections;
-    std::unordered_map<int, std::vector<int>> reverseConnections;
-    int nextNodeId;
-    std::vector<int> processOrder;
-    bool isGraphDirty;
-};
-
-
 class AudioNode {
 public:
   AudioNode(const AudioContext& context) : outputBuffer(context) {}
@@ -102,32 +75,15 @@ public:
 };
 
 
-struct CallbackData {
-  AudioGraph* graph = nullptr;
-  AudioBuffer* graphOutput = nullptr;
-  AudioContext* globalContext = nullptr;
-};
-
-class Engine {
+class Gain : public AudioNode {
 public:
-  Engine(AudioContext globalContext);
-  ~Engine();
+    explicit Gain(const AudioContext& context, float gain);
 
-  AudioContext globalContext;
-  AudioGraph graph;
-  AudioBuffer output;
-
-  void start();
-  void stop();
+    void setGain(float gain);
+    void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
 
 private:
-  void initMiniaudio();
-
-  // Miniaudio
-  ma_result result;
-  ma_device_config config;
-  ma_device device;
-  CallbackData cbData;
+    float gain;
 };
 
 
@@ -205,60 +161,6 @@ private:
 };
 
 
-class Gain : public AudioNode {
-public:
-    explicit Gain(const AudioContext& context, float gain);
-
-    void setGain(float gain);
-    void virtual process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
-
-private:
-    float gain;
-};
-
-
-struct MusicCue {
-  std::string slug;
-  std::string fileName;
-  bool loop;
-  float gain;
-
-  MusicCue(
-    std::string slug,
-    std::string fileName,
-    bool loop = true,
-    float gain = 1.0f
-  ) : slug(slug), fileName(fileName), loop(loop), gain(gain) {}
-};
-
-class MusicCueOrchestrator {
-public:
-  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir);
-
-  void playCue(const std::string& slug);
-  void stopCue();
-
-private:
-  AudioGraph& graph;
-  std::unordered_map<std::string, Sampler*> samplers;
-  std::string currentCueSlug;
-};
-
-    
-class NoiseGenerator : public AudioNode {
-    public:
-    NoiseGenerator(const AudioContext& context);
-    
-    void process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
-    
-    private:
-    std::random_device randomDevice;
-    std::mt19937 randomGen;
-    std::uniform_real_distribution<float> dist;
-};
-    
-
-
 class PitchShift : public AudioNode {
 public:
   explicit PitchShift(const AudioContext& context, int semitoneShift);
@@ -281,43 +183,6 @@ private:
   double convertSemitoneToRatio(int semitoneShift);
   float getLerpSample(double samplePosition);
   float getCubicSample(double samplePosition);
-};
-
-
-struct SamplePackItem {
-  std::string slug;
-  std::string fileName;
-  int polyphony;
-  bool loop;
-  float gain;
-  int pitchShift;
-  std::optional<EnvConfig> envConfig;
-  std::optional<FilterConfig> filterConfig;
-
-  // Constructor enforces required fields and default value for polyphony.
-  SamplePackItem(
-    std::string slug,
-    std::string fileName,
-    int polyphony = 1,
-    bool loop = false,
-    float gain = 1.0,
-    int pitchShift = 0,
-    std::optional<EnvConfig> env = std::nullopt,
-    std::optional<FilterConfig> filterConfig = std::nullopt
-  ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop),
-      gain(gain), pitchShift(pitchShift), envConfig(env), filterConfig(filterConfig) {}
-};
-
-class SamplePack {
-public:
-  SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, std::string samplesDir, float gain = 1.0);
-  void triggerSample(std::string slug);
-
-  std::unordered_map<std::string, Sampler*> samplers;
-  std::unique_ptr<Gain> output;
-
-private:
-  AudioGraph& graph;
 };
 
 
@@ -434,6 +299,146 @@ class Sampler : public AudioNode {
   std::optional<FilterConfig> filterConfig;
 };
     
+
+
+
+class AudioGraph {
+public:
+    AudioGraph(const AudioContext& context);
+
+    template <typename NodeType, typename... Args>
+    std::pair<int, NodeType*> addNode(Args &&...args)
+    {
+      int id = nextNodeId++;
+      auto node = std::make_unique<NodeType>(audioContext, std::forward<Args>(args)...);
+      nodes[id] = std::move(node);
+      isGraphDirty = true;
+      return std::make_pair(id, static_cast<NodeType*>(nodes[id].get()));
+    }
+
+    void removeNode(int nodeId);
+    void connect(int sourceNodeId, int destNodeId);
+    void disconnect(int sourceNodeId, int destNodeId);
+    void processGraph(AudioBuffer& graphOutputBuffer);
+    void setAudioContext(AudioContext newContext);
+
+    void updateProcessOrder();
+    AudioContext audioContext;
+    std::unordered_map<int, std::unique_ptr<AudioNode>> nodes;
+    std::unordered_map<int, std::vector<int>> connections;
+    std::unordered_map<int, std::vector<int>> reverseConnections;
+    int nextNodeId;
+    std::vector<int> processOrder;
+    bool isGraphDirty;
+};
+
+
+struct MusicCue {
+  std::string slug;
+  std::string fileName;
+  bool loop;
+  float gain;
+
+  MusicCue(
+    std::string slug,
+    std::string fileName,
+    bool loop = true,
+    float gain = 1.0f
+  ) : slug(slug), fileName(fileName), loop(loop), gain(gain) {}
+};
+
+class MusicCueOrchestrator {
+public:
+  MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir);
+
+  void playCue(const std::string& slug);
+  void stopCue();
+
+private:
+  AudioGraph& graph;
+  std::unordered_map<std::string, Sampler*> samplers;
+  std::string currentCueSlug;
+};
+
+
+struct SamplePackItem {
+  std::string slug;
+  std::string fileName;
+  int polyphony;
+  bool loop;
+  float gain;
+  int pitchShift;
+  std::optional<EnvConfig> envConfig;
+  std::optional<FilterConfig> filterConfig;
+
+  // Constructor enforces required fields and default value for polyphony.
+  SamplePackItem(
+    std::string slug,
+    std::string fileName,
+    int polyphony = 1,
+    bool loop = false,
+    float gain = 1.0,
+    int pitchShift = 0,
+    std::optional<EnvConfig> env = std::nullopt,
+    std::optional<FilterConfig> filterConfig = std::nullopt
+  ) : slug(slug), fileName(fileName), polyphony(polyphony), loop(loop),
+      gain(gain), pitchShift(pitchShift), envConfig(env), filterConfig(filterConfig) {}
+};
+
+class SamplePack {
+public:
+  SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, std::string samplesDir, float gain = 1.0);
+  void triggerSample(std::string slug);
+
+  std::unordered_map<std::string, Sampler*> samplers;
+  std::unique_ptr<Gain> output;
+
+private:
+  AudioGraph& graph;
+};
+
+    
+class NoiseGenerator : public AudioNode {
+    public:
+    NoiseGenerator(const AudioContext& context);
+    
+    void process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& outputBuffer) override;
+    
+    private:
+    std::random_device randomDevice;
+    std::mt19937 randomGen;
+    std::uniform_real_distribution<float> dist;
+};
+    
+
+
+struct CallbackData {
+  AudioGraph* graph = nullptr;
+  AudioBuffer* graphOutput = nullptr;
+  AudioContext* globalContext = nullptr;
+};
+
+class Engine {
+public:
+  Engine(AudioContext globalContext);
+  ~Engine();
+
+  AudioContext globalContext;
+  AudioGraph graph;
+  AudioBuffer output;
+
+  void start();
+  void stop();
+
+private:
+  void initMiniaudio();
+
+  // Miniaudio
+  ma_result result;
+  ma_device_config config;
+  ma_device device;
+  CallbackData cbData;
+};
 } // namespace MittelVec
 
 #endif // MITTELVEC_H
@@ -446,8 +451,6 @@ class Sampler : public AudioNode {
 #include "miniaudio.h"
 
 namespace MittelVec {
-
-
 
 
 
@@ -501,11 +504,6 @@ float& AudioBuffer::operator[](int index) {
 const float& AudioBuffer::operator[](int index) const {
   return data[index];
 }
-
-
-
-
-
 
 
 AudioGraph::AudioGraph(const AudioContext& context)
@@ -654,12 +652,10 @@ void AudioGraph::setAudioContext(AudioContext newContext)
 {
   audioContext = newContext;
 }
-
 #define MINIAUDIO_IMPLEMENTATION
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wextra"
-
 #pragma GCC diagnostic pop
 
 
@@ -738,8 +734,6 @@ void Engine::start() {
 void Engine::stop() {
   ma_device_uninit(&device);
 }
-
-
 
 
 Envelope::Envelope(const AudioContext& context, const EnvConfig& config)
@@ -837,8 +831,6 @@ void Envelope::applyToBuffer(AudioBuffer& buffer) {
     buffer[i] *= getNextLevel();
   }
 }
-
-
 
 // C++ 17 doesn't have PI constant.
 // We can use arccosine of -1.0 to get pi instead.
@@ -949,8 +941,6 @@ void Filter::applyToBuffer(AudioBuffer& buffer) {
 }
 
 
-
-
 Gain::Gain(const AudioContext& context, float gain)
   : AudioNode(context), gain(gain) {}
 
@@ -978,8 +968,6 @@ void Gain::process(const std::vector<const AudioBuffer*>& inputs, AudioBuffer& o
     outputBuffer[i] *= gain;
   }
 }
-
-
 
 
 MusicCueOrchestrator::MusicCueOrchestrator(AudioGraph& graph, std::vector<MusicCue> cues, std::string samplesDir)
@@ -1033,8 +1021,6 @@ void MusicCueOrchestrator::stopCue() {
 }
 
 
-
-
 NoiseGenerator::NoiseGenerator(const AudioContext& context)
   : AudioNode(context),
     randomGen(randomDevice()),
@@ -1046,8 +1032,6 @@ void NoiseGenerator::process(const std::vector<const AudioBuffer*>& inputs, Audi
     outputBuffer[i] = dist(randomGen);
   }
 }
-
-
 
 
 PitchShift::PitchShift(const AudioContext& context, int semitoneShift)
@@ -1178,8 +1162,6 @@ double PitchShift::convertSemitoneToRatio(int semitoneShift) {
 }
 
 
-
-
 SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePackItems, std::string samplesDir, float gain)
   : graph(graph) {
     auto [outputNodeId, outputNodePtr] = graph.addNode<Gain>(gain); // consider parameterizing gain
@@ -1202,10 +1184,6 @@ SamplePack::SamplePack(AudioGraph& graph, std::vector<SamplePackItem> samplePack
 void SamplePack::triggerSample(std::string slug) {
   samplers[slug]->noteOn();
 }
-
-
-
-
 
 
 Sampler::Sampler(
@@ -1314,7 +1292,6 @@ void Sampler::process(const std::vector<const AudioBuffer *> &inputs, AudioBuffe
     }
   }
 }
-
 } // namespace MittelVec
 
 #endif // MITTELVEC_IMPLEMENTATION
