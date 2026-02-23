@@ -1,5 +1,6 @@
 build/
 sounds/
 cues/
+TestSingleHeader
 dev-notes.md
 miniaudio.h
