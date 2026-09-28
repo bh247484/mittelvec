@@ -164,11 +164,11 @@ def create_single_header():
 
     # --- 3. Write Output ---
     with open(OUTPUT_FILE, 'w') as outfile:
-        header_guard = f"{PROJECT_NAME.upper()}_H"
         outfile.write(f"// {PROJECT_NAME} - Single-Header Library\n")
         outfile.write(f"// Generated on {__import__('datetime').date.today().isoformat()}\n\n")
-        outfile.write(f"#ifndef {header_guard}\n")
-        outfile.write(f"#define {header_guard}\n\n")
+        
+        # Protect file from double-inclusion
+        outfile.write("#pragma once\n\n")
 
         # Write System Includes (Global Scope)
         outfile.write("// System includes \n")
@@ -187,8 +187,6 @@ def create_single_header():
             outfile.write(content)
             outfile.write("\n")
         outfile.write(f"}} // namespace {NAMESPACE_NAME}\n\n")
-
-        outfile.write(f"#endif // {header_guard}\n\n")
 
         # Implementation Guard
         outfile.write(f"#ifdef {IMPLEMENTATION_GUARD}\n\n")

@@ -1,8 +1,7 @@
 // MittelVec - Single-Header Library
-// Generated on 2026-02-22
+// Generated on 2026-03-08
 
-#ifndef MITTELVEC_H
-#define MITTELVEC_H
+#pragma once
 
 // System includes 
 #include <algorithm>
@@ -440,8 +439,6 @@ private:
   AudioGraph& graph;
 };
 } // namespace MittelVec
-
-#endif // MITTELVEC_H
 
 #ifdef MITTELVEC_IMPLEMENTATION
 
