@@ -25,7 +25,7 @@ The `generate_single_header.py` file is a bit brittle and if I could do things o
 
 I've put the project on ice for now but would like to revisit it eventually. In particular I'd like to refactor the Sampler implementation. I programmed myself into a corner there and hamstrung myself with some upstream architectural choices. That meant the memory management and logic is a little counter intuitive. I'm sure it could be simplified and improved.
 
-I'd also like to add a third top level abstraction alongside Sampler and MusicCueOrchestrator that exposes some synthesizer primitives so that you could parameterize a synthesizer dynamically with game engine outputs.
+I'd also like to add a third top level abstraction alongside Sampler and MusicCueOrchestrator that exposes some synthesizer primitives so that you could parameterize a synthesizer dynamically with game engine outputs. LFOs and other modulation sources as well as programmatic randomization for the sythesizer and other node parameters would add some creative expression.
 
 The code as it stands was designed to take static parameters at compile time. I'd like to update it to accepts streaming values at run time. I think reimagining threading would be a prerequisite for that as well.
 
